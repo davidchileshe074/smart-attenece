@@ -26,13 +26,14 @@ export default function Sidebar({ role, isOpen, onClose }: SidebarProps) {
 
   const links = {
     lecturer: [
-      { name: 'Dashboard', href: '/dashboard/lecturer', icon: LayoutDashboard },
+      { name: 'Teaching Hub', href: '/dashboard/lecturer', icon: LayoutDashboard },
       { name: 'Courses', href: '/dashboard/lecturer/courses', icon: BookOpen },
       { name: 'Sessions', href: '/dashboard/lecturer/sessions', icon: History },
+      { name: 'Reports', href: '/dashboard/lecturer/reports', icon: BarChart3 },
       { name: 'Live View', href: '/dashboard/lecturer/live', icon: QrCode },
     ],
     student: [
-      { name: 'Home', href: '/dashboard/student', icon: LayoutDashboard },
+      { name: 'My Hub', href: '/dashboard/student', icon: LayoutDashboard },
       { name: 'Scan QR', href: '/dashboard/student/scan', icon: QrCode },
       { name: 'History', href: '/dashboard/student/history', icon: History },
     ],
@@ -114,4 +115,3 @@ export default function Sidebar({ role, isOpen, onClose }: SidebarProps) {
     </>
   );
 }
-

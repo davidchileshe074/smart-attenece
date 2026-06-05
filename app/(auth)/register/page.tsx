@@ -27,7 +27,7 @@ export default function RegisterPage() {
       const data = await res.json();
 
       if (data.success) {
-        router.push('/login?registered=true');
+        router.replace(data.redirectTo || (data.user?.role === 'lecturer' ? '/dashboard/lecturer' : '/dashboard/student'));
       } else {
         setError(data.error || 'Registration failed');
       }

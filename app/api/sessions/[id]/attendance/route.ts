@@ -3,10 +3,10 @@ import connectDB from '@/lib/db';
 import Attendance from '@/models/attendance.model';
 
 // GET attendance for a specific session
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     await connectDB();
-    const sessionId = params.id;
+    const { id: sessionId } = await params;
 
     const attendance = await Attendance.find({ session: sessionId })
       .populate('student', 'name studentId email')

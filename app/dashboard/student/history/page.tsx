@@ -16,7 +16,7 @@ export default function StudentHistoryPage() {
   const [loading, setLoading] = useState(true);
   const [history, setHistory] = useState<any[]>([]);
   const [studentName, setStudentName] = useState('Student');
-  const [studentId, setStudentId] = useState('');
+  const [studentCode, setStudentCode] = useState('');
   const [summary, setSummary] = useState({
     attendanceRate: 0,
     presentCount: 0,
@@ -36,8 +36,8 @@ export default function StudentHistoryPage() {
         }
 
         setStudentName(meData.data.name || 'Student');
-        const resolvedStudentId = meData.data.studentId || meData.data.id;
-        setStudentId(resolvedStudentId);
+        setStudentCode(meData.data.studentId || meData.data.id);
+        const resolvedStudentId = meData.data.id;
 
         const historyRes = await fetch(`/api/attendance?studentId=${resolvedStudentId}`);
         const historyData = await historyRes.json();
@@ -169,7 +169,7 @@ export default function StudentHistoryPage() {
           </p>
         </div>
         <div className="text-sm font-semibold text-primary bg-primary/5 px-3 py-2 rounded-full w-fit">
-          Student ID: {studentId || 'N/A'}
+          Student ID: {studentCode || 'N/A'}
         </div>
       </div>
 

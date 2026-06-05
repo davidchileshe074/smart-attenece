@@ -14,7 +14,7 @@ import {
 
 export default function AdminUsersPage() {
   const [loading, setLoading] = useState(true);
-  const [users, setUsers] = useState([]);
+  const [users, setUsers] = useState<any[]>([]);
 
   useEffect(() => {
     // Simulate fetching users

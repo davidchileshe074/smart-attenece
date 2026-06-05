@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { AlertCircle, ArrowRight, CircleDot, PlayCircle, Radio } from 'lucide-react';
+import { AlertCircle, ArrowRight, CircleDot, Radio } from 'lucide-react';
 import LiveAttendance from '@/components/lecturer/live-attendance';
 
 type Session = {

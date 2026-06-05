@@ -8,7 +8,6 @@ import {
   Calendar,
   CheckCircle2,
   Clock,
-  MoreHorizontal,
   Plus,
   RefreshCw,
 } from 'lucide-react';
@@ -117,18 +116,49 @@ export default function LecturerOverview() {
 
   return (
     <div className="space-y-10">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-widest text-text-secondary">Lecturer Dashboard</p>
-          <h1 className="text-2xl font-bold text-text-primary">Dashboard Overview</h1>
-          <p className="text-text-secondary text-sm mt-1">
-            Welcome back, {profile?.name || 'lecturer'}. Here is your teaching activity today.
-          </p>
+      <div className="rounded-3xl overflow-hidden border border-slate-200 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 text-slate-900 shadow-lg">
+        <div className="p-8 md:p-10 grid grid-cols-1 lg:grid-cols-[1.3fr_0.7fr] gap-8 items-end">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.35em] text-primary">Lecturer Command Center</p>
+            <h1 className="text-3xl md:text-4xl font-black mt-3">Manage sessions, attendance, and course activity in one place.</h1>
+            <p className="text-slate-600 mt-4 max-w-2xl">
+              Welcome back, {profile?.name || 'lecturer'}. Start a session, monitor attendance live, and check who may need follow-up.
+            </p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <button onClick={() => setIsModalOpen(true)} className="btn-primary gap-2 bg-primary text-white hover:bg-primary/90">
+                <Plus className="h-4 w-4" />
+                Create Session
+              </button>
+              <Link href="/dashboard/lecturer/reports" className="btn-secondary gap-2 bg-slate-200 border-slate-300 text-slate-900 hover:bg-slate-300">
+                <RefreshCw className="h-4 w-4" />
+                View Reports
+              </Link>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-2xl bg-white border border-slate-300 p-4">
+              <p className="text-[10px] uppercase tracking-[0.3em] text-slate-600">Active</p>
+              <h2 className="text-3xl font-black mt-2">{stats.activeSessions}</h2>
+              <p className="text-xs text-slate-600 mt-1">live sessions</p>
+            </div>
+            <div className="rounded-2xl bg-white border border-slate-300 p-4">
+              <p className="text-[10px] uppercase tracking-[0.3em] text-slate-600">Courses</p>
+              <h2 className="text-3xl font-black mt-2">{stats.totalCourses}</h2>
+              <p className="text-xs text-slate-600 mt-1">assigned to you</p>
+            </div>
+            <div className="rounded-2xl bg-white border border-slate-300 p-4">
+              <p className="text-[10px] uppercase tracking-[0.3em] text-slate-600">Attendance</p>
+              <h2 className="text-3xl font-black mt-2">{stats.avgAttendance}%</h2>
+              <p className="text-xs text-slate-600 mt-1">system average</p>
+            </div>
+            <div className="rounded-2xl bg-white border border-slate-300 p-4">
+              <p className="text-[10px] uppercase tracking-[0.3em] text-slate-600">Mode</p>
+              <h2 className="text-3xl font-black mt-2">Live</h2>
+              <p className="text-xs text-slate-600 mt-1">monitoring ready</p>
+            </div>
+          </div>
         </div>
-        <button onClick={() => setIsModalOpen(true)} className="btn-primary gap-2">
-          <Plus className="h-4 w-4" />
-          Create Session
-        </button>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -221,8 +251,8 @@ export default function LecturerOverview() {
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-4">
+      <div className="grid grid-cols-1 lg:grid-cols-[1.25fr_0.75fr] gap-8">
+        <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-bold text-text-primary">Recent Sessions</h3>
             <Link href="/dashboard/lecturer/sessions" className="btn-ghost text-xs">
@@ -272,25 +302,24 @@ export default function LecturerOverview() {
 
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-bold text-text-primary">Activity Feed</h3>
-            <MoreHorizontal className="h-4 w-4 text-slate-400 cursor-pointer" />
+            <h3 className="text-lg font-bold text-text-primary">At Risk Students</h3>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-error bg-error/10 px-2 py-1 rounded-full">
+              Alerts
+            </span>
           </div>
-          <div className="card space-y-6">
-            {[
-              'Students are scanning live for your active sessions.',
-              'Session analytics are now connected to your attendance data.',
-              'Use the reports page to export CSV or save a PDF copy.',
-            ].map((message, index) => (
-              <div key={message} className="flex gap-4">
-                <div className="h-2 w-2 rounded-full bg-primary mt-1.5 shrink-0" />
-                <div>
-                  <p className="text-sm text-text-primary leading-tight font-medium">{message}</p>
-                  <p className="text-[10px] text-text-secondary mt-1">
-                    {index === 0 ? 'LIVE NOW' : index === 1 ? 'TODAY' : 'READY'}
-                  </p>
-                </div>
-              </div>
-            ))}
+          <div className="card space-y-4">
+            {stats.avgAttendance >= 75 ? (
+              <p className="text-sm text-text-secondary">
+                No critical attendance alerts right now. Students below threshold will appear here.
+              </p>
+            ) : (
+              <p className="text-sm text-text-secondary">
+                Attendance trends are below target. Review the reports page for low-attendance students.
+              </p>
+            )}
+            <Link href="/dashboard/lecturer/reports" className="btn-secondary w-full">
+              Open Attendance Reports
+            </Link>
           </div>
         </div>
       </div>

@@ -16,7 +16,7 @@ export default function StudentScanPage() {
         const data = await res.json();
 
         if (data.success && data.data.role === 'student') {
-          setStudentId(data.data.studentId || data.data.id);
+          setStudentId(data.data.id);
         } else {
           setStatus({ type: 'error', message: data.error || 'Unable to load your student profile.' });
         }

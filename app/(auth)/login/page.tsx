@@ -26,7 +26,16 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (data.success) {
-        router.push('/dashboard');
+        const role = data.user?.role;
+        if (role === 'student') {
+          router.replace('/dashboard/student');
+        } else if (role === 'lecturer') {
+          router.replace('/dashboard/lecturer');
+        } else if (role === 'admin') {
+          router.replace('/dashboard/admin');
+        } else {
+          router.replace('/dashboard');
+        }
       } else {
         setError(data.error || 'Invalid credentials');
       }

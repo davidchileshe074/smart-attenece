@@ -1,12 +1,25 @@
 'use client';
 
 import { Bell, Search, User, Menu } from 'lucide-react';
+import { usePathname } from 'next/navigation';
 
 interface NavbarProps {
   onMenuClick?: () => void;
 }
 
 export default function Navbar({ onMenuClick }: NavbarProps) {
+  const pathname = usePathname();
+
+  let roleLabel = 'Student';
+  let roleHint = 'Student Portal';
+  if (pathname.includes('/lecturer')) {
+    roleLabel = 'Lecturer';
+    roleHint = 'Teaching Hub';
+  } else if (pathname.includes('/admin')) {
+    roleLabel = 'Admin';
+    roleHint = 'System Console';
+  }
+
   return (
     <header className="h-16 bg-white/80 backdrop-blur-md border-b border-slate-100 fixed top-0 right-0 left-0 md:left-64 z-40 px-6 flex items-center justify-between">
       {/* Mobile Menu Toggle */}
@@ -37,7 +50,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
         <div className="flex items-center gap-3 cursor-pointer group">
           <div className="text-right hidden sm:block">
             <p className="text-xs font-bold text-text-primary group-hover:text-primary transition-colors">David Chileshe</p>
-            <p className="text-[10px] text-text-secondary uppercase tracking-wider font-semibold">Lecturer</p>
+            <p className="text-[10px] text-text-secondary uppercase tracking-wider font-semibold">{roleLabel} - {roleHint}</p>
           </div>
           <div className="h-8 w-8 bg-slate-100 rounded-md flex items-center justify-center border border-slate-200 group-hover:border-primary/30 transition-all">
             <User className="h-4 w-4 text-slate-500" />
