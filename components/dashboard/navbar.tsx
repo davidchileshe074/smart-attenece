@@ -22,7 +22,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
       <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-slate-100 rounded-md border border-slate-200 text-slate-500 w-64 cursor-pointer hover:bg-slate-200 transition-colors">
         <Search className="h-4 w-4" />
         <span className="text-xs font-medium">Search anything...</span>
-        <span className="ml-auto text-[10px] bg-white px-1.5 py-0.5 rounded border border-slate-300">⌘K</span>
+        <span className="ml-auto text-[10px] bg-white px-1.5 py-0.5 rounded border border-slate-300" >⌘K</span>
       </div>
 
       {/* Right Actions */}

@@ -2,11 +2,19 @@ import { NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import Course from '@/models/course.model';
 
-// GET: Fetch all courses
-export async function GET() {
+// GET: Fetch all courses (optionally filter by lecturer)
+export async function GET(req: Request) {
   try {
     await connectDB();
-    const courses = await Course.find({}).populate('lecturer', 'name email');
+    const { searchParams } = new URL(req.url);
+    const lecturerId = searchParams.get('lecturerId');
+
+    const query: any = {};
+    if (lecturerId) {
+      query.lecturer = lecturerId;
+    }
+
+    const courses = await Course.find(query).populate('lecturer', 'name email');
     return NextResponse.json({ success: true, data: courses }, { status: 200 });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
