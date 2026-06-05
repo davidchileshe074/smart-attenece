@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { AlertCircle, Download, TrendingUp, ShieldAlert, BarChart3 } from 'lucide-react';
+import { Download, TrendingUp, ShieldAlert, BarChart3 } from 'lucide-react';
+import { ErrorState, LoadingState } from '@/components/ui/status-state';
 
 type AttendanceRecord = {
   _id: string;
@@ -35,35 +36,42 @@ export default function LecturerReportsPage() {
   const [error, setError] = useState('');
   const [lecturerName, setLecturerName] = useState('Lecturer');
 
-  useEffect(() => {
-    const loadReports = async () => {
-      try {
-        const meRes = await fetch('/api/auth/me');
-        const meData = await meRes.json();
+  const loadReports = async () => {
+    try {
+      setLoading(true);
+      setError('');
 
-        if (!meData.success) {
-          throw new Error(meData.error || 'Failed to load profile');
-        }
+      const meRes = await fetch('/api/auth/me');
+      const meData = await meRes.json();
 
-        setLecturerName(meData.data.name || 'Lecturer');
-
-        const res = await fetch(`/api/attendance?lecturerId=${meData.data.id}`);
-        const data = await res.json();
-
-        if (!data.success) {
-          throw new Error(data.error || 'Failed to load reports');
-        }
-
-        setRecords(data.data || []);
-        setSummary(data.summary || null);
-      } catch (err: any) {
-        setError(err.message || 'Failed to load reports');
-      } finally {
-        setLoading(false);
+      if (!meData.success) {
+        throw new Error(meData.error || 'Failed to load profile');
       }
-    };
 
-    loadReports();
+      setLecturerName(meData.data.name || 'Lecturer');
+
+      const res = await fetch(`/api/attendance?lecturerId=${meData.data.id}`);
+      const data = await res.json();
+
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to load reports');
+      }
+
+      setRecords(data.data || []);
+      setSummary(data.summary || null);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to load reports');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      void loadReports();
+    }, 0);
+
+    return () => clearTimeout(timer);
   }, []);
 
   const exportCsv = () => {
@@ -100,35 +108,30 @@ export default function LecturerReportsPage() {
   const topAlerts = useMemo(() => summary?.lowAttendanceAlerts.slice(0, 5) || [], [summary]);
 
   if (loading) {
-    return <div className="card text-center py-16 text-text-secondary">Loading lecturer report...</div>;
+    return <LoadingState title="Loading lecturer reports" description="Building your attendance analytics and low-attendance alerts." compact />;
   }
 
   if (error) {
-    return (
-      <div className="flex gap-3 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
-        <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
-        <p>{error}</p>
-      </div>
-    );
+    return <ErrorState title="Unable to load reports" message={error} onRetry={loadReports} />;
   }
 
   return (
     <div className="space-y-8">
-      <div className="rounded-3xl overflow-hidden border border-slate-200 bg-gradient-to-br from-slate-900 via-primary to-bg-dark text-white">
+      <div className="rounded-3xl overflow-hidden border border-slate-200 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 text-slate-900">
         <div className="p-8 md:p-10 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.35em] text-accent">Lecturer Reports</p>
+            <p className="text-xs font-bold uppercase tracking-[0.35em] text-primary">Lecturer Reports</p>
             <h1 className="text-3xl md:text-4xl font-black mt-3">Attendance analytics for {lecturerName}</h1>
-            <p className="text-slate-300 mt-4 max-w-2xl">
+            <p className="text-slate-600 mt-4 max-w-2xl">
               Review your class attendance trends, export reports, and identify students who need extra support.
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
-            <button onClick={exportCsv} className="btn-primary gap-2 bg-white text-primary hover:bg-slate-100">
+            <button onClick={exportCsv} className="btn-primary gap-2 bg-primary text-white hover:bg-primary/90">
               <Download className="h-4 w-4" />
               Export CSV
             </button>
-            <Link href="/dashboard/lecturer/sessions" className="btn-secondary gap-2 bg-white/10 border-white/15 text-white hover:bg-white/15">
+            <Link href="/dashboard/lecturer/sessions" className="btn-secondary gap-2 bg-slate-200 border-slate-300 text-slate-900 hover:bg-slate-300">
               <BarChart3 className="h-4 w-4" />
               Sessions
             </Link>

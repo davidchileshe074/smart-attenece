@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AlertCircle, Eye, Plus, RefreshCw, StopCircle, Trash2 } from 'lucide-react';
 import Link from 'next/link';
+import CourseSessionModal from '@/components/lecturer/course-session-modal';
+import { useRealtimeEvents } from '@/hooks/use-realtime-events';
 
 interface Session {
   _id: string;
@@ -18,6 +20,8 @@ export default function LecturerSessionsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [refreshing, setRefreshing] = useState(false);
+  const [lecturerId, setLecturerId] = useState('');
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
 
   const loadSessions = async () => {
     try {
@@ -31,6 +35,7 @@ export default function LecturerSessionsPage() {
         throw new Error(meData.error || 'Failed to load lecturer profile');
       }
 
+      setLecturerId(meData.data.id);
       const res = await fetch(`/api/sessions?lecturerId=${meData.data.id}`);
       const data = await res.json();
 
@@ -39,16 +44,32 @@ export default function LecturerSessionsPage() {
       }
 
       setSessions(data.data || []);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load sessions');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to load sessions');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadSessions();
+    const timer = setTimeout(() => {
+      void loadSessions();
+    }, 0);
+
+    return () => clearTimeout(timer);
   }, []);
+
+  useRealtimeEvents({
+    lecturerId: lecturerId || undefined,
+    handlers: {
+      onSessionCreated: () => {
+        void loadSessions();
+      },
+      onSessionExpired: () => {
+        void loadSessions();
+      },
+    },
+  });
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -73,7 +94,7 @@ export default function LecturerSessionsPage() {
           current.map((session) => (session._id === sessionId ? { ...session, status: 'expired' } : session))
         );
       }
-    } catch (err) {
+    } catch {
       alert('Failed to end session');
     }
   };
@@ -91,7 +112,7 @@ export default function LecturerSessionsPage() {
         const data = await res.json();
         alert(data.error || 'Failed to delete session');
       }
-    } catch (err) {
+    } catch {
       alert('Failed to delete session');
     }
   };
@@ -134,10 +155,10 @@ export default function LecturerSessionsPage() {
           <p className="text-text-secondary mt-1">Manage and monitor your attendance sessions</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Link href="/dashboard/lecturer" className="btn-primary gap-2">
+          <button onClick={() => setIsCreateOpen(true)} className="btn-primary gap-2" type="button">
             <Plus className="h-4 w-4" />
-            New Session
-          </Link>
+            Create Session
+          </button>
           <button
             onClick={handleRefresh}
             disabled={refreshing}
@@ -252,6 +273,13 @@ export default function LecturerSessionsPage() {
           </div>
         </div>
       )}
+
+      <CourseSessionModal
+        isOpen={isCreateOpen}
+        onClose={() => setIsCreateOpen(false)}
+        lecturerId={lecturerId}
+        onCreated={loadSessions}
+      />
     </div>
   );
 }

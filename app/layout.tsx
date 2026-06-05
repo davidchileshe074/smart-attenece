@@ -20,11 +20,10 @@ export default function RootLayout({
       <body className={`${inter.className} min-h-full antialiased text-text-primary`} suppressHydrationWarning>
         <Preloader />
         <div className="fixed top-0 left-0 right-0 h-1 z-[10000] pointer-events-none">
-           <div className="h-full bg-accent w-1/3 animate-[loading_2s_infinite]" />
+           <div className="h-full bg-accent w-1/3 animate-[loading_1.2s_ease-in-out_infinite]" />
         </div>
         {children}
       </body>
     </html>
   );
 }
-

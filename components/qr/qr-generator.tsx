@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
+import { ErrorState, LoadingState } from '@/components/ui/status-state';
 
 interface QRGeneratorProps {
   sessionId: string;
@@ -58,8 +59,8 @@ export default function QRGenerator({ sessionId }: QRGeneratorProps) {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  if (loading) return <div className="p-8 text-center">Generating secure QR code...</div>;
-  if (error) return <div className="p-8 text-center text-red-500">Error: {error}</div>;
+  if (loading) return <LoadingState title="Generating QR code" description="Creating a secure, session-bound code for students to scan." compact />;
+  if (error) return <ErrorState title="Unable to generate QR code" message={error} onRetry={fetchQR} />;
 
   return (
     <div className="flex flex-col items-center justify-center p-6 bg-white rounded-xl shadow-lg border border-gray-100">

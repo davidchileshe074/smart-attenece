@@ -3,6 +3,7 @@ import connectDB from '@/lib/db';
 import Session from '@/models/session.model';
 import Attendance from '@/models/attendance.model';
 import User from '@/models/user.model';
+import { publishRealtimeEvent } from '@/lib/realtime';
 
 export async function POST(req: Request) {
   try {
@@ -63,13 +64,51 @@ export async function POST(req: Request) {
       status: 'present',
     });
 
+    const populatedAttendance = await Attendance.findById(attendance._id)
+      .populate('student', 'name studentId')
+      .populate('course', 'title code');
+
+    if (populatedAttendance) {
+      const populatedStudent = populatedAttendance.student as {
+        _id: unknown;
+        name: string;
+        studentId: string;
+      };
+      const populatedCourse = session.course as {
+        _id: unknown;
+        code: string;
+        title: string;
+      };
+
+      await publishRealtimeEvent('attendance:marked', {
+        attendanceId: String(populatedAttendance._id),
+        sessionId: String(session._id),
+        lecturerId: String(session.lecturer),
+        course: {
+          id: String(populatedCourse._id),
+          code: populatedCourse.code,
+          title: populatedCourse.title,
+        },
+        student: {
+          id: String(populatedStudent._id),
+          name: populatedStudent.name,
+          studentId: populatedStudent.studentId,
+        },
+        timestamp: new Date(populatedAttendance.timestamp).toISOString(),
+        status: populatedAttendance.status,
+      });
+    }
+
     return NextResponse.json({
       success: true,
       message: 'Attendance marked successfully',
       data: attendance,
     }, { status: 201 });
 
-  } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json(
+      { success: false, error: error instanceof Error ? error.message : 'Failed to mark attendance' },
+      { status: 500 }
+    );
   }
 }

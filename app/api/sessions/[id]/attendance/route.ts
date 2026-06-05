@@ -13,7 +13,10 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       .sort({ timestamp: -1 });
 
     return NextResponse.json({ success: true, data: attendance }, { status: 200 });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json(
+      { success: false, error: error instanceof Error ? error.message : 'Failed to load session attendance' },
+      { status: 500 }
+    );
   }
 }

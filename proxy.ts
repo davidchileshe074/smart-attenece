@@ -35,10 +35,6 @@ export async function proxy(req: NextRequest) {
     }
   }
 
-  if ((pathname === '/login' || pathname === '/register') && token) {
-    return NextResponse.redirect(new URL('/dashboard', req.url));
-  }
-
   return NextResponse.next();
 }
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Sidebar from '@/components/dashboard/sidebar';
 import Navbar from '@/components/dashboard/navbar';
 import { usePathname } from 'next/navigation';
@@ -13,6 +13,14 @@ export default function DashboardLayout({
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const pathname = usePathname();
 
+  useEffect(() => {
+    const closeTimer = window.setTimeout(() => {
+      setIsSidebarOpen(false);
+    }, 0);
+
+    return () => window.clearTimeout(closeTimer);
+  }, [pathname]);
+
   // Determine role based on URL path
   let role: 'student' | 'lecturer' | 'admin' = 'student';
   if (pathname.includes('/lecturer')) role = 'lecturer';
@@ -20,12 +28,12 @@ export default function DashboardLayout({
 
   return (
     <div className="min-h-screen bg-bg-light">
-      <Sidebar 
-        role={role} 
-        isOpen={isSidebarOpen} 
-        onClose={() => setIsSidebarOpen(false)} 
+      <Sidebar
+        role={role}
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
       />
-      <Navbar onMenuClick={() => setIsSidebarOpen(true)} />
+      <Navbar onMenuClick={() => setIsSidebarOpen((current) => !current)} />
       
       {/* Main Content Area */}
       <main className="pt-16 md:ml-64 min-h-screen p-6 md:p-10">
@@ -36,4 +44,3 @@ export default function DashboardLayout({
     </div>
   );
 }
-

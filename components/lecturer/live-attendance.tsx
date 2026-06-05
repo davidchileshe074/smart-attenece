@@ -1,7 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Users, Clock, AlertCircle } from 'lucide-react';
+import { useRealtimeEvents } from '@/hooks/use-realtime-events';
+import type { AttendanceMarkedPayload } from '@/lib/realtime-types';
 
 interface AttendanceRecord {
   _id: string;
@@ -20,7 +22,7 @@ interface LiveAttendanceProps {
 export default function LiveAttendance({ sessionId, courseName, timeRemaining }: LiveAttendanceProps) {
   const [attendanceList, setAttendanceList] = useState<AttendanceRecord[]>([]);
   const [loading, setLoading] = useState(true);
-  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [autoRefresh, setAutoRefresh] = useState(false);
 
   useEffect(() => {
     const fetchAttendance = async () => {
@@ -43,6 +45,36 @@ export default function LiveAttendance({ sessionId, courseName, timeRemaining }:
       return () => clearInterval(timer);
     }
   }, [sessionId, autoRefresh]);
+
+  useRealtimeEvents({
+    sessionId,
+    handlers: {
+      onAttendanceMarked: (payload: AttendanceMarkedPayload) => {
+        if (payload.sessionId !== sessionId) {
+          return;
+        }
+
+        setAttendanceList((current) => {
+          if (current.some((record) => record._id === payload.attendanceId)) {
+            return current;
+          }
+
+          return [
+            {
+              _id: payload.attendanceId,
+              student: {
+                name: payload.student.name,
+                studentId: payload.student.studentId,
+              },
+              timestamp: payload.timestamp,
+              status: payload.status,
+            },
+            ...current,
+          ];
+        });
+      },
+    },
+  });
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -93,7 +125,7 @@ export default function LiveAttendance({ sessionId, courseName, timeRemaining }:
             onChange={(e) => setAutoRefresh(e.target.checked)}
             className="rounded"
           />
-          Auto-refresh
+          Polling fallback
         </label>
       </div>
 

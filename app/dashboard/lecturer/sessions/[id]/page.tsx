@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { ArrowLeft, Copy, Download, AlertCircle } from 'lucide-react';
+import { use, useCallback, useEffect, useState } from 'react';
+import { ArrowLeft, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import QRDisplay from '@/components/lecturer/qr-display';
 import LiveAttendance from '@/components/lecturer/live-attendance';
@@ -15,19 +15,65 @@ interface SessionData {
   qrCode: string;
 }
 
-export default function SessionDetailPage({ params }: { params: { id: string } }) {
+export default function SessionDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id: sessionId } = use(params);
   const [session, setSession] = useState<SessionData | null>(null);
   const [qrCodeImage, setQrCodeImage] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [timeRemaining, setTimeRemaining] = useState(0);
 
+  const fetchSession = useCallback(async () => {
+    try {
+      setLoading(true);
+      const res = await fetch(`/api/sessions/${sessionId}`);
+      const data = await res.json();
+
+      if (data.success) {
+        setSession(data.data);
+
+        if (data.data.status === 'active') {
+          // Fetch QR code image only while the session is active.
+          const qrRes = await fetch(`/api/qr/generate?sessionId=${sessionId}`);
+          const qrData = await qrRes.json();
+          if (qrData.success) {
+            setQrCodeImage(qrData.data.qrImage);
+          } else {
+            setQrCodeImage('');
+          }
+        } else {
+          setQrCodeImage('');
+          setTimeRemaining(0);
+        }
+
+        // Calculate initial time remaining
+        const now = new Date().getTime();
+        const endTime = new Date(data.data.endTime).getTime();
+        setTimeRemaining(Math.max(0, Math.floor((endTime - now) / 1000)));
+      } else {
+        setError(data.error || 'Failed to load session');
+      }
+    } catch {
+      setError('Failed to load session');
+    } finally {
+      setLoading(false);
+    }
+  }, [sessionId]);
+
   useEffect(() => {
-    fetchSession();
-  }, [params.id]);
+    const initialLoad = window.setTimeout(() => {
+      void fetchSession();
+    }, 0);
+
+    return () => window.clearTimeout(initialLoad);
+  }, [fetchSession]);
 
   useEffect(() => {
     if (!session) return;
+
+    if (session.status !== 'active') {
+      return;
+    }
 
     // Update time remaining
     const timer = setInterval(() => {
@@ -38,43 +84,13 @@ export default function SessionDetailPage({ params }: { params: { id: string } }
 
       if (remaining === 0) {
         clearInterval(timer);
-        // Refresh session status
-        fetchSession();
+        // Refresh once so the UI picks up the expired state, then stop polling.
+        void fetchSession();
       }
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [session]);
-
-  const fetchSession = async () => {
-    try {
-      setLoading(true);
-      const res = await fetch(`/api/sessions/${params.id}`);
-      const data = await res.json();
-
-      if (data.success) {
-        setSession(data.data);
-
-        // Fetch QR code image
-        const qrRes = await fetch(`/api/qr/generate?sessionId=${params.id}`);
-        const qrData = await qrRes.json();
-        if (qrData.success) {
-          setQrCodeImage(qrData.data.qrImage);
-        }
-
-        // Calculate initial time remaining
-        const now = new Date().getTime();
-        const endTime = new Date(data.data.endTime).getTime();
-        setTimeRemaining(Math.max(0, Math.floor((endTime - now) / 1000)));
-      } else {
-        setError(data.error || 'Failed to load session');
-      }
-    } catch (err) {
-      setError('Failed to load session');
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [fetchSession, session]);
 
   if (loading) {
     return (

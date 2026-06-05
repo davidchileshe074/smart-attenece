@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { X, AlertCircle } from 'lucide-react';
 
 interface SessionModalProps {
@@ -10,8 +10,14 @@ interface SessionModalProps {
   lecturerId: string;
 }
 
+type Course = {
+  _id: string;
+  code: string;
+  title: string;
+};
+
 export default function SessionModal({ isOpen, onClose, onSuccess, lecturerId }: SessionModalProps) {
-  const [courses, setCourses] = useState<any[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [formData, setFormData] = useState({
@@ -19,23 +25,27 @@ export default function SessionModal({ isOpen, onClose, onSuccess, lecturerId }:
     durationInMinutes: '60',
   });
 
-  useEffect(() => {
-    if (isOpen) {
-      fetchCourses();
-    }
-  }, [isOpen]);
-
-  const fetchCourses = async () => {
+  const fetchCourses = useCallback(async () => {
     try {
       const res = await fetch(`/api/courses?lecturerId=${lecturerId}`);
       const data = await res.json();
       if (data.success) {
         setCourses(data.data || []);
       }
-    } catch (err) {
+    } catch {
       setError('Failed to load courses');
     }
-  };
+  }, [lecturerId]);
+
+  useEffect(() => {
+    if (isOpen) {
+      const timer = setTimeout(() => {
+        void fetchCourses();
+      }, 0);
+
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, fetchCourses]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,8 +73,8 @@ export default function SessionModal({ isOpen, onClose, onSuccess, lecturerId }:
       setFormData({ courseId: '', durationInMinutes: '60' });
       onSuccess();
       onClose();
-    } catch (err: any) {
-      setError(err.message || 'An error occurred');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setLoading(false);
     }

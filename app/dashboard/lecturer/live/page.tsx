@@ -2,8 +2,11 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { AlertCircle, ArrowRight, CircleDot, Radio } from 'lucide-react';
+import { ArrowRight, CircleDot, Radio } from 'lucide-react';
 import LiveAttendance from '@/components/lecturer/live-attendance';
+import CourseSessionModal from '@/components/lecturer/course-session-modal';
+import { useRealtimeEvents } from '@/hooks/use-realtime-events';
+import { ErrorState, LoadingState } from '@/components/ui/status-state';
 
 type Session = {
   _id: string;
@@ -24,36 +27,84 @@ export default function LecturerLiveViewPage() {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [isSessionModalOpen, setIsSessionModalOpen] = useState(false);
+  const [timeRemaining, setTimeRemaining] = useState(0);
+
+  const loadData = async () => {
+    try {
+      const meRes = await fetch('/api/auth/me');
+      const meData = await meRes.json();
+
+      if (!meData.success) {
+        throw new Error(meData.error || 'Failed to load profile');
+      }
+
+      setProfile(meData.data);
+
+      const sessionsRes = await fetch(`/api/sessions?lecturerId=${meData.data.id}`);
+      const sessionsData = await sessionsRes.json();
+
+      if (sessionsData.success) {
+        setSessions(sessionsData.data || []);
+      } else {
+        throw new Error(sessionsData.error || 'Failed to load sessions');
+      }
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to load live view');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        const meRes = await fetch('/api/auth/me');
-        const meData = await meRes.json();
+    const timer = setTimeout(() => {
+      void loadData();
+    }, 0);
 
-        if (!meData.success) {
-          throw new Error(meData.error || 'Failed to load profile');
-        }
-
-        setProfile(meData.data);
-
-        const sessionsRes = await fetch(`/api/sessions?lecturerId=${meData.data.id}`);
-        const sessionsData = await sessionsRes.json();
-
-        if (sessionsData.success) {
-          setSessions(sessionsData.data || []);
-        } else {
-          throw new Error(sessionsData.error || 'Failed to load sessions');
-        }
-      } catch (err: any) {
-        setError(err.message || 'Failed to load live view');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadData();
+    return () => clearTimeout(timer);
   }, []);
+
+  useRealtimeEvents({
+    lecturerId: profile?.id,
+    handlers: {
+      onSessionCreated: () => {
+        void loadData();
+      },
+      onSessionExpired: () => {
+        void loadData();
+      },
+    },
+  });
+
+  const refreshSessions = async (lecturerId: string) => {
+    try {
+      const sessionsRes = await fetch(`/api/sessions?lecturerId=${lecturerId}`);
+      const sessionsData = await sessionsRes.json();
+
+      if (sessionsData.success) {
+        setSessions(sessionsData.data || []);
+        return true;
+      }
+    } catch {
+      // Fall back to a full reload below.
+    }
+
+    return false;
+  };
+
+  const handleSessionCreated = async () => {
+    setIsSessionModalOpen(false);
+
+    if (profile?.id) {
+      const refreshed = await refreshSessions(profile.id);
+      if (!refreshed) {
+        void loadData();
+      }
+      return;
+    }
+
+    void loadData();
+  };
 
   const activeSessions = useMemo(
     () => sessions.filter((session) => session.status === 'active'),
@@ -61,27 +112,35 @@ export default function LecturerLiveViewPage() {
   );
   const currentSession = activeSessions[0] || null;
 
+  useEffect(() => {
+    if (!currentSession) return;
+
+    const updateTimeRemaining = () => {
+      const now = new Date().getTime();
+      const endTime = new Date(currentSession.endTime).getTime();
+      setTimeRemaining(Math.max(0, Math.floor((endTime - now) / 1000)));
+    };
+
+    const immediateTimer = setTimeout(updateTimeRemaining, 0);
+    const timer = setInterval(updateTimeRemaining, 1000);
+    return () => {
+      clearTimeout(immediateTimer);
+      clearInterval(timer);
+    };
+  }, [currentSession]);
+
   if (loading) {
-    return (
-      <div className="card text-center py-16">
-        <div className="inline-block animate-spin text-2xl mb-3">Loading</div>
-        <p className="text-text-secondary">Preparing your live attendance view...</p>
-      </div>
-    );
+    return <LoadingState title="Preparing live attendance" description="Loading your active session and live scan stream." compact />;
   }
 
   if (error) {
     return (
-      <div className="space-y-4">
-        <h1 className="text-2xl font-bold text-text-primary">Live Attendance</h1>
-        <div className="flex gap-3 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
-          <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
-          <p>{error}</p>
-        </div>
-        <Link href="/dashboard/lecturer" className="btn-secondary">
-          Back to dashboard
-        </Link>
-      </div>
+      <ErrorState
+        title="Unable to load live attendance"
+        message={error}
+        actionHref="/dashboard/lecturer"
+        actionLabel="Back to dashboard"
+      />
     );
   }
 
@@ -112,20 +171,22 @@ export default function LecturerLiveViewPage() {
               Start a new session from the dashboard to begin live attendance tracking.
             </p>
           </div>
-          <Link href="/dashboard/lecturer" className="btn-primary inline-flex w-fit mx-auto gap-2">
+          <button
+            type="button"
+            onClick={() => setIsSessionModalOpen(true)}
+            disabled={!profile?.id}
+            className="btn-primary inline-flex w-fit mx-auto gap-2 disabled:opacity-50"
+          >
             Create Session
             <ArrowRight className="h-4 w-4" />
-          </Link>
+          </button>
         </div>
       ) : (
         <div className="grid grid-cols-1 xl:grid-cols-[1.4fr_0.9fr] gap-6">
           <LiveAttendance
             sessionId={currentSession._id}
             courseName={`${currentSession.course.code} - ${currentSession.course.title}`}
-            timeRemaining={Math.max(
-              0,
-              Math.floor((new Date(currentSession.endTime).getTime() - Date.now()) / 1000)
-            )}
+            timeRemaining={timeRemaining}
           />
 
           <div className="card space-y-4">
@@ -157,6 +218,13 @@ export default function LecturerLiveViewPage() {
           </div>
         </div>
       )}
+
+      <CourseSessionModal
+        isOpen={isSessionModalOpen}
+        onClose={() => setIsSessionModalOpen(false)}
+        onCreated={handleSessionCreated}
+        lecturerId={profile?.id || ''}
+      />
     </div>
   );
 }

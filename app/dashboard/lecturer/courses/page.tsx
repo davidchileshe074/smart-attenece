@@ -1,11 +1,23 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { Plus } from 'lucide-react';
+import CourseSessionModal from '@/components/lecturer/course-session-modal';
+import { LoadingState } from '@/components/ui/status-state';
 
 export default function LecturerCoursesPage() {
-  const [courses, setCourses] = useState<any[]>([]);
+  type Course = {
+    _id: string;
+    code: string;
+    title: string;
+    students?: unknown[];
+  };
+
+  const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [lecturerName, setLecturerName] = useState('Lecturer');
+  const [lecturerId, setLecturerId] = useState('');
+  const [isCourseModalOpen, setIsCourseModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchCourses = async () => {
@@ -15,10 +27,13 @@ export default function LecturerCoursesPage() {
 
         if (meData.success) {
           setLecturerName(meData.data.name || 'Lecturer');
+          setLecturerId(meData.data.id);
           const res = await fetch(`/api/courses?lecturerId=${meData.data.id}`);
           const data = await res.json();
           if (data.success) setCourses(data.data || []);
         }
+      } catch {
+        // Keep the UI responsive even if the initial fetch fails.
       } finally {
         setLoading(false);
       }
@@ -26,6 +41,16 @@ export default function LecturerCoursesPage() {
 
     fetchCourses();
   }, []);
+
+  const refreshCourses = async () => {
+    if (!lecturerId) return;
+
+    const res = await fetch(`/api/courses?lecturerId=${lecturerId}`);
+    const data = await res.json();
+    if (data.success) {
+      setCourses(data.data || []);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -36,10 +61,10 @@ export default function LecturerCoursesPage() {
       </div>
 
       {loading ? (
-        <div className="card text-center py-12 text-text-secondary">Loading courses...</div>
+        <LoadingState title="Loading courses" description="Fetching your assigned course list." compact />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {courses.map((course: any) => (
+          {courses.map((course) => (
             <div key={course._id} className="card hover:border-primary transition-all">
               <span className="text-xs font-bold text-primary uppercase">{course.code}</span>
               <h3 className="text-xl font-bold mt-1 mb-4 text-text-primary">{course.title}</h3>
@@ -50,16 +75,25 @@ export default function LecturerCoursesPage() {
             </div>
           ))}
 
-          <button className="border-2 border-dashed border-slate-200 rounded-2xl flex flex-col items-center justify-center p-8 hover:bg-slate-50 transition-all group">
+          <button
+            onClick={() => setIsCourseModalOpen(true)}
+            className="border-2 border-dashed border-slate-200 rounded-2xl flex flex-col items-center justify-center p-8 hover:bg-slate-50 transition-all group"
+            type="button"
+          >
             <div className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center mb-3 group-hover:bg-primary group-hover:text-white transition-all">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-              </svg>
+              <Plus className="h-6 w-6" />
             </div>
             <span className="font-bold text-slate-400 group-hover:text-primary">Add New Course</span>
           </button>
         </div>
       )}
+
+      <CourseSessionModal
+        isOpen={isCourseModalOpen}
+        onClose={() => setIsCourseModalOpen(false)}
+        lecturerId={lecturerId}
+        onCreated={refreshCourses}
+      />
     </div>
   );
 }

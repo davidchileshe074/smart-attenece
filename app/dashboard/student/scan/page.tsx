@@ -8,6 +8,7 @@ export default function StudentScanPage() {
   const [loading, setLoading] = useState(true);
   const [studentId, setStudentId] = useState('');
   const [status, setStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  type ScanResult = { success?: boolean; message?: string; error?: string };
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -20,7 +21,7 @@ export default function StudentScanPage() {
         } else {
           setStatus({ type: 'error', message: data.error || 'Unable to load your student profile.' });
         }
-      } catch (error) {
+      } catch {
         setStatus({ type: 'error', message: 'Unable to load your student profile.' });
       } finally {
         setLoading(false);
@@ -30,7 +31,7 @@ export default function StudentScanPage() {
     loadProfile();
   }, []);
 
-  const handleScanSuccess = (result: any) => {
+  const handleScanSuccess = (result: ScanResult) => {
     if (result.success) {
       setStatus({ type: 'success', message: result.message || 'Attendance marked successfully!' });
     } else {

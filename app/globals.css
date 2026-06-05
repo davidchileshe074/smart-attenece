@@ -37,20 +37,20 @@
 
 @layer components {
   .btn-primary {
-    @apply inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 px-4 py-2 bg-primary text-white hover:bg-primary/90 shadow-subtle;
+    @apply inline-flex items-center justify-center rounded-sm text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 px-4 py-2 bg-primary text-white hover:bg-primary/90 shadow-subtle;
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 px-4 py-2 bg-white border border-slate-200 text-secondary hover:bg-slate-50 shadow-subtle;
+    @apply inline-flex items-center justify-center rounded-sm text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 px-4 py-2 bg-white border border-slate-200 text-secondary hover:bg-slate-50 shadow-subtle;
   }
 
   .btn-ghost {
-    @apply inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 px-4 py-2 hover:bg-slate-100 text-secondary;
+    @apply inline-flex items-center justify-center rounded-sm text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 px-4 py-2 hover:bg-slate-100 text-secondary;
   }
 
 
   .card {
-    @apply bg-white border border-slate-200 rounded-md shadow-subtle p-6;
+    @apply bg-white border border-slate-200 rounded-sm shadow-subtle p-6;
   }
 
   .input-base {
@@ -71,6 +71,5 @@
   0% { transform: translateX(-100%); }
   100% { transform: translateX(300%); }
 }
-
 
 

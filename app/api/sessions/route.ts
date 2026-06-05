@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import Session from '@/models/session.model';
 import crypto from 'crypto';
+import { publishRealtimeEvent } from '@/lib/realtime';
 
 // GET: Fetch all sessions (optionally filter by course or lecturer)
 export async function GET(req: Request) {
@@ -11,7 +12,7 @@ export async function GET(req: Request) {
     const courseId = searchParams.get('courseId');
     const lecturerId = searchParams.get('lecturerId');
 
-    const query: any = {};
+    const query: Record<string, string> = {};
     if (courseId) query.course = courseId;
     if (lecturerId) query.lecturer = lecturerId;
 
@@ -21,8 +22,11 @@ export async function GET(req: Request) {
       .sort({ createdAt: -1 });
 
     return NextResponse.json({ success: true, data: sessions }, { status: 200 });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json(
+      { success: false, error: error instanceof Error ? error.message : 'Failed to load sessions' },
+      { status: 500 }
+    );
   }
 }
 
@@ -56,8 +60,34 @@ export async function POST(req: Request) {
       status: 'active',
     });
 
-    return NextResponse.json({ success: true, data: session }, { status: 201 });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    const populatedSession = await Session.findById(session._id).populate('course', 'title code');
+
+    if (populatedSession && populatedSession.course) {
+      const populatedCourse = populatedSession.course as {
+        _id: unknown;
+        code: string;
+        title: string;
+      };
+
+      await publishRealtimeEvent('session:created', {
+        sessionId: String(populatedSession._id),
+        lecturerId: String(populatedSession.lecturer),
+        course: {
+          id: String(populatedCourse._id),
+          code: populatedCourse.code,
+          title: populatedCourse.title,
+        },
+        startTime: populatedSession.startTime.toISOString(),
+        endTime: populatedSession.endTime.toISOString(),
+        status: populatedSession.status,
+      });
+    }
+
+    return NextResponse.json({ success: true, data: populatedSession || session }, { status: 201 });
+  } catch (error: unknown) {
+    return NextResponse.json(
+      { success: false, error: error instanceof Error ? error.message : 'Failed to create session' },
+      { status: 500 }
+    );
   }
 }

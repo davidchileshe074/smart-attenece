@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import {
-  AlertCircle,
   Calendar,
   CheckCircle2,
   Clock,
@@ -11,6 +10,7 @@ import {
   Filter,
   MapPin,
 } from 'lucide-react';
+import { ErrorState, LoadingState } from '@/components/ui/status-state';
 
 export default function StudentHistoryPage() {
   const [loading, setLoading] = useState(true);
@@ -101,15 +101,16 @@ export default function StudentHistoryPage() {
     return 'Needs attention';
   }, [summary.attendanceRate, summary.totalRecords]);
 
+  if (loading) {
+    return <LoadingState title="Loading attendance history" description="Fetching your timeline, summary, and recent marks." compact />;
+  }
+
+  if (error) {
+    return <ErrorState title="Unable to load attendance history" message={error} onRetry={() => window.location.reload()} />;
+  }
+
   return (
     <div className="space-y-8">
-      {error && (
-        <div className="flex gap-3 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
-          <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
-          <p>{error}</p>
-        </div>
-      )}
-
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <p className="text-xs font-bold uppercase tracking-widest text-text-secondary">Attendance History</p>
@@ -184,24 +185,7 @@ export default function StudentHistoryPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50">
-            {loading ? (
-              [1, 2, 3, 4, 5].map((i) => (
-                <tr key={i}>
-                  <td className="px-6 py-4">
-                    <div className="h-4 w-32 bg-slate-100 animate-pulse rounded" />
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="h-4 w-24 bg-slate-100 animate-pulse rounded" />
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="h-4 w-20 bg-slate-100 animate-pulse rounded" />
-                  </td>
-                  <td className="px-6 py-4 text-right flex justify-end">
-                    <div className="h-6 w-16 bg-slate-100 animate-pulse rounded-full" />
-                  </td>
-                </tr>
-              ))
-            ) : history.length > 0 ? (
+            {history.length > 0 ? (
               history.map((log) => (
                 <tr key={log._id} className="hover:bg-slate-50 transition-colors group">
                   <td className="px-6 py-4">

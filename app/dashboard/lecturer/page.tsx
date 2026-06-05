@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import SessionModal from '@/components/lecturer/session-modal';
+import CourseSessionModal from '@/components/lecturer/course-session-modal';
+import { useRealtimeEvents } from '@/hooks/use-realtime-events';
+import { ErrorState, LoadingState } from '@/components/ui/status-state';
 import {
   ArrowUpRight,
   Calendar,
@@ -81,36 +83,48 @@ export default function LecturerOverview() {
           avgAttendance: attendanceData.summary?.attendanceRate || 0,
         }));
       }
-    } catch (err: any) {
-      setError(err.message || 'Failed to load dashboard');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to load dashboard');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadDashboard();
+    const timer = setTimeout(() => {
+      void loadDashboard();
+    }, 0);
+
+    return () => clearTimeout(timer);
   }, []);
+
+  useRealtimeEvents({
+    lecturerId: profile?.id,
+    handlers: {
+      onSessionCreated: () => {
+        void loadDashboard();
+      },
+      onSessionExpired: () => {
+        void loadDashboard();
+      },
+    },
+  });
 
   const handleSessionCreated = () => {
     loadDashboard();
   };
 
   if (loading) {
-    return (
-      <div className="card text-center py-16">
-        <div className="inline-block animate-spin text-2xl mb-3">Loading</div>
-        <p className="text-text-secondary">Loading lecturer dashboard...</p>
-      </div>
-    );
+    return <LoadingState title="Loading lecturer dashboard" description="Pulling in your sessions, courses, and attendance summary." compact />;
   }
 
   if (error) {
     return (
-      <div className="card">
-        <p className="text-error font-semibold">Unable to load dashboard</p>
-        <p className="text-text-secondary mt-2">{error}</p>
-      </div>
+      <ErrorState
+        title="Unable to load lecturer dashboard"
+        message={error}
+        onRetry={loadDashboard}
+      />
     );
   }
 
@@ -324,10 +338,10 @@ export default function LecturerOverview() {
         </div>
       </div>
 
-      <SessionModal
+      <CourseSessionModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        onSuccess={handleSessionCreated}
+        onCreated={handleSessionCreated}
         lecturerId={profile?.id || ''}
       />
     </div>

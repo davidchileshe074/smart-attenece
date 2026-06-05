@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import Session from '@/models/session.model';
-import Attendance from '@/models/attendance.model';
+import { publishRealtimeEvent } from '@/lib/realtime';
 
 export async function GET(
   req: Request,
@@ -24,11 +24,31 @@ export async function GET(
     if (session.status === 'active' && now > session.endTime) {
       session.status = 'expired';
       await session.save();
+      const populatedCourse = session.course as {
+        _id: unknown;
+        code: string;
+        title: string;
+      };
+      await publishRealtimeEvent('session:expired', {
+        sessionId: String(session._id),
+        lecturerId: String(session.lecturer),
+        course: {
+          id: String(populatedCourse._id),
+          code: populatedCourse.code,
+          title: populatedCourse.title,
+        },
+        startTime: session.startTime.toISOString(),
+        endTime: session.endTime.toISOString(),
+        status: session.status,
+      });
     }
 
     return NextResponse.json({ success: true, data: session }, { status: 200 });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json(
+      { success: false, error: error instanceof Error ? error.message : 'Failed to load session' },
+      { status: 500 }
+    );
   }
 }
 
@@ -51,8 +71,11 @@ export async function PATCH(
     }
 
     return NextResponse.json({ success: true, data: session }, { status: 200 });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json(
+      { success: false, error: error instanceof Error ? error.message : 'Failed to update session' },
+      { status: 500 }
+    );
   }
 }
 
@@ -83,9 +106,34 @@ export async function PUT(
       return NextResponse.json({ success: false, error: 'Session not found' }, { status: 404 });
     }
 
+    if (status === 'expired' && session) {
+      await session.populate('course', 'title code');
+      const populatedCourse = session.course as {
+        _id: unknown;
+        code: string;
+        title: string;
+      };
+
+      await publishRealtimeEvent('session:expired', {
+        sessionId: String(session._id),
+        lecturerId: String(session.lecturer),
+        course: {
+          id: String(populatedCourse._id),
+          code: populatedCourse.code,
+          title: populatedCourse.title,
+        },
+        startTime: session.startTime.toISOString(),
+        endTime: session.endTime.toISOString(),
+        status: session.status,
+      });
+    }
+
     return NextResponse.json({ success: true, data: session }, { status: 200 });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json(
+      { success: false, error: error instanceof Error ? error.message : 'Failed to change session status' },
+      { status: 500 }
+    );
   }
 }
 
@@ -113,7 +161,10 @@ export async function DELETE(
     await Session.findByIdAndDelete(id);
 
     return NextResponse.json({ success: true, message: 'Session deleted' }, { status: 200 });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json(
+      { success: false, error: error instanceof Error ? error.message : 'Failed to delete session' },
+      { status: 500 }
+    );
   }
 }

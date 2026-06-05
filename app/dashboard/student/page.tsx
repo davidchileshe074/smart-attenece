@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import QRScanner from '@/components/qr/qr-scanner';
+import { LoadingState } from '@/components/ui/status-state';
 import { BarChart3, Clock3, History, ScanLine, Sparkles } from 'lucide-react';
 
 type AttendanceRecord = {
@@ -92,38 +93,26 @@ export default function StudentDashboard() {
   }, [summary.attendanceRate]);
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-slate-50 p-6 md:p-12">
-        <div className="max-w-5xl mx-auto space-y-6">
-          <div className="h-12 w-64 bg-slate-200 animate-pulse rounded-xl" />
-          <div className="h-52 w-full bg-slate-100 animate-pulse rounded-3xl" />
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-24 bg-slate-100 animate-pulse rounded-2xl" />
-            ))}
-          </div>
-        </div>
-      </div>
-    );
+    return <LoadingState title="Loading student dashboard" description="Fetching your profile, attendance summary, and recent activity." />;
   }
 
   return (
     <div className="min-h-screen bg-slate-50 p-6 md:p-12">
       <div className="max-w-5xl mx-auto space-y-8">
-        <section className="rounded-3xl overflow-hidden bg-gradient-to-br from-accent via-sky-600 to-primary text-white shadow-lg">
+        <section className="rounded-xl overflow-hidden bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 text-slate-900 shadow-lg">
           <div className="p-8 md:p-10 grid grid-cols-1 lg:grid-cols-[1.25fr_0.75fr] gap-8 items-end">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.35em] text-sky-100">My Attendance Hub</p>
+              <p className="text-xs font-bold uppercase tracking-[0.35em] text-primary">My Attendance Hub</p>
               <h1 className="text-3xl md:text-4xl font-black mt-3">Welcome back, {studentName}.</h1>
-              <p className="text-sky-100/90 mt-4 max-w-2xl">
+              <p className="text-slate-600 mt-4 max-w-2xl">
                 Scan into class, review your record, and keep an eye on your attendance trend from one personal dashboard.
               </p>
               <div className="mt-6 flex flex-wrap gap-3">
-                <Link href="/dashboard/student/scan" className="btn-primary gap-2 bg-white text-primary hover:bg-slate-100">
+                <Link href="/dashboard/student/scan" className="btn-primary gap-2 bg-primary text-white hover:bg-primary/90">
                   <ScanLine className="h-4 w-4" />
                   Scan QR
                 </Link>
-                <Link href="/dashboard/student/history" className="btn-secondary gap-2 bg-white/10 border-white/15 text-white hover:bg-white/15">
+                <Link href="/dashboard/student/history" className="btn-secondary gap-2 bg-slate-200 border-slate-300 text-slate-900 hover:bg-slate-300">
                   <History className="h-4 w-4" />
                   View History
                 </Link>
@@ -131,25 +120,25 @@ export default function StudentDashboard() {
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-2xl bg-white/10 border border-white/10 p-4">
-                <p className="text-[10px] uppercase tracking-[0.3em] text-sky-100">Attendance</p>
+              <div className="rounded-lg bg-white border border-slate-300 p-4">
+                <p className="text-[10px] uppercase tracking-[0.3em] text-slate-600">Attendance</p>
                 <h2 className="text-3xl font-black mt-2">{summary.attendanceRate}%</h2>
-                <p className="text-xs text-sky-100/80 mt-1">current rate</p>
+                <p className="text-xs text-slate-600 mt-1">current rate</p>
               </div>
-              <div className="rounded-2xl bg-white/10 border border-white/10 p-4">
-                <p className="text-[10px] uppercase tracking-[0.3em] text-sky-100">Mood</p>
+              <div className="rounded-lg bg-white border border-slate-300 p-4">
+                <p className="text-[10px] uppercase tracking-[0.3em] text-slate-600">Mood</p>
                 <h2 className="text-3xl font-black mt-2">{attendanceMood}</h2>
-                <p className="text-xs text-sky-100/80 mt-1">progress signal</p>
+                <p className="text-xs text-slate-600 mt-1">progress signal</p>
               </div>
-              <div className="rounded-2xl bg-white/10 border border-white/10 p-4">
-                <p className="text-[10px] uppercase tracking-[0.3em] text-sky-100">Present</p>
+              <div className="rounded-lg bg-white border border-slate-300 p-4">
+                <p className="text-[10px] uppercase tracking-[0.3em] text-slate-600">Present</p>
                 <h2 className="text-3xl font-black mt-2">{summary.presentCount}</h2>
-                <p className="text-xs text-sky-100/80 mt-1">successful scans</p>
+                <p className="text-xs text-slate-600 mt-1">successful scans</p>
               </div>
-              <div className="rounded-2xl bg-white/10 border border-white/10 p-4">
-                <p className="text-[10px] uppercase tracking-[0.3em] text-sky-100">Code</p>
+              <div className="rounded-lg bg-white border border-slate-300 p-4">
+                <p className="text-[10px] uppercase tracking-[0.3em] text-slate-600">Code</p>
                 <h2 className="text-xl font-black mt-2 truncate">{studentCode || 'N/A'}</h2>
-                <p className="text-xs text-sky-100/80 mt-1">student profile</p>
+                <p className="text-xs text-slate-600 mt-1">student profile</p>
               </div>
             </div>
           </div>
@@ -157,7 +146,7 @@ export default function StudentDashboard() {
 
         {statusMessage && (
           <div
-            className={`p-4 rounded-2xl font-bold flex items-center gap-3 ${
+            className={`p-4 rounded-lg font-bold flex items-center gap-3 ${
               statusMessage.type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
             }`}
           >
@@ -227,7 +216,7 @@ export default function StudentDashboard() {
                 {attendance.slice(0, 4).map((record) => (
                   <div
                     key={record._id}
-                    className="flex justify-between items-center p-4 bg-white rounded-xl border border-gray-100 shadow-sm"
+                    className="flex justify-between items-center p-4 bg-white rounded-lg border border-gray-100 shadow-sm"
                   >
                     <div>
                       <p className="font-bold text-gray-800">{record.course?.code}</p>
@@ -253,11 +242,11 @@ export default function StudentDashboard() {
                 <p className="text-xs font-bold uppercase tracking-widest text-text-secondary">Performance Insight</p>
                 <h3 className="text-lg font-bold text-text-primary mt-1">Your attendance trend</h3>
               </div>
-              <div className="flex items-start gap-3 p-4 bg-primary/5 rounded-lg border border-primary/10">
+              <div className="flex items-start gap-3 p-4 bg-primary/5 rounded-md border border-primary/10">
                 <Clock3 className="h-5 w-5 text-primary mt-0.5" />
                 <p className="text-sm text-text-secondary">{insight}</p>
               </div>
-              <div className="flex items-start gap-3 p-4 bg-slate-50 rounded-lg border border-slate-200">
+              <div className="flex items-start gap-3 p-4 bg-slate-50 rounded-md border border-slate-200">
                 <History className="h-5 w-5 text-text-secondary mt-0.5" />
                 <p className="text-sm text-text-secondary">
                   Open your history page for a full timeline, export options, and deeper attendance review.
