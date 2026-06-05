@@ -1,101 +1,179 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import SessionModal from '@/components/lecturer/session-modal';
-import { 
-  Users, 
-  Clock, 
-  CheckCircle2, 
-  ArrowUpRight, 
+import {
+  ArrowUpRight,
   Calendar,
+  CheckCircle2,
+  Clock,
+  MoreHorizontal,
   Plus,
-  MoreHorizontal
+  RefreshCw,
 } from 'lucide-react';
 
-interface Session {
+type Session = {
   _id: string;
   course: { title: string; code: string };
-  status: string;
-}
+  startTime: string;
+  endTime: string;
+  status: 'active' | 'expired' | 'scheduled';
+};
+
+type Profile = {
+  id: string;
+  name: string;
+  role: string;
+};
 
 export default function LecturerOverview() {
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [lecturerId, setLecturerId] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [stats, setStats] = useState({
     activeSessions: 0,
     totalCourses: 0,
-    avgAttendance: 92,
+    avgAttendance: 0,
   });
+  const [recentSessions, setRecentSessions] = useState<Session[]>([]);
 
-  useEffect(() => {
-    // Get lecturer ID from localStorage (set during login)
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      const user = JSON.parse(storedUser);
-      setLecturerId(user.userId);
-      fetchStats(user.userId);
-    }
-  }, []);
-
-  const fetchStats = async (userId: string) => {
+  const loadDashboard = async () => {
     try {
-      const [sessionsRes, coursesRes] = await Promise.all([
-        fetch('/api/sessions'),
-        fetch('/api/courses'),
+      setLoading(true);
+      setError('');
+
+      const meRes = await fetch('/api/auth/me');
+      const meData = await meRes.json();
+
+      if (!meData.success) {
+        throw new Error(meData.error || 'Failed to load lecturer profile');
+      }
+
+      setProfile(meData.data);
+
+      const [sessionsRes, coursesRes, attendanceRes] = await Promise.all([
+        fetch(`/api/sessions?lecturerId=${meData.data.id}`),
+        fetch(`/api/courses?lecturerId=${meData.data.id}`),
+        fetch(`/api/attendance?lecturerId=${meData.data.id}`),
       ]);
 
       const sessionsData = await sessionsRes.json();
       const coursesData = await coursesRes.json();
+      const attendanceData = await attendanceRes.json();
 
       if (sessionsData.success) {
-        const activeSessions = sessionsData.data.filter(
-          (s: Session) => s.status === 'active'
-        ).length;
-        setStats((prev) => ({ ...prev, activeSessions }));
+        const sessions = sessionsData.data || [];
+        setRecentSessions(sessions.slice(0, 3));
+        setStats((current) => ({
+          ...current,
+          activeSessions: sessions.filter((session: Session) => session.status === 'active').length,
+        }));
       }
 
       if (coursesData.success) {
-        setStats((prev) => ({ ...prev, totalCourses: coursesData.data.length }));
+        setStats((current) => ({ ...current, totalCourses: coursesData.data?.length || 0 }));
       }
-    } catch (err) {
-      console.error('Failed to fetch stats:', err);
+
+      if (attendanceData.success) {
+        setStats((current) => ({
+          ...current,
+          avgAttendance: attendanceData.summary?.attendanceRate || 0,
+        }));
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to load dashboard');
+    } finally {
+      setLoading(false);
     }
   };
 
+  useEffect(() => {
+    loadDashboard();
+  }, []);
+
   const handleSessionCreated = () => {
-    fetchStats(lecturerId);
+    loadDashboard();
   };
+
+  if (loading) {
+    return (
+      <div className="card text-center py-16">
+        <div className="inline-block animate-spin text-2xl mb-3">Loading</div>
+        <p className="text-text-secondary">Loading lecturer dashboard...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="card">
+        <p className="text-error font-semibold">Unable to load dashboard</p>
+        <p className="text-text-secondary mt-2">{error}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-10">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
+          <p className="text-xs font-bold uppercase tracking-widest text-text-secondary">Lecturer Dashboard</p>
           <h1 className="text-2xl font-bold text-text-primary">Dashboard Overview</h1>
-          <p className="text-text-secondary text-sm">Welcome back! Here's what's happening today.</p>
+          <p className="text-text-secondary text-sm mt-1">
+            Welcome back, {profile?.name || 'lecturer'}. Here is your teaching activity today.
+          </p>
         </div>
-        <button 
-          onClick={() => setIsModalOpen(true)}
-          className="btn-primary gap-2"
-        >
+        <button onClick={() => setIsModalOpen(true)} className="btn-primary gap-2">
           <Plus className="h-4 w-4" />
           Create Session
         </button>
       </div>
 
-      {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {[
-          { label: 'Active Sessions', value: stats.activeSessions, icon: Clock, color: 'text-warning', bg: 'bg-warning/5', trend: 'Live' },
-          { label: 'Avg. Attendance', value: `${stats.avgAttendance}%`, icon: CheckCircle2, color: 'text-success', bg: 'bg-success/5', trend: '+2.4%' },
-          { label: 'Total Courses', value: stats.totalCourses, icon: Calendar, color: 'text-accent', bg: 'bg-accent/5', trend: 'Assigned' },
+          {
+            label: 'Active Sessions',
+            value: stats.activeSessions,
+            icon: Clock,
+            color: 'text-warning',
+            bg: 'bg-warning/5',
+            trend: 'Live',
+          },
+          {
+            label: 'Attendance Rate',
+            value: `${stats.avgAttendance}%`,
+            icon: CheckCircle2,
+            color: 'text-success',
+            bg: 'bg-success/5',
+            trend: 'Avg',
+          },
+          {
+            label: 'Total Courses',
+            value: stats.totalCourses,
+            icon: Calendar,
+            color: 'text-accent',
+            bg: 'bg-accent/5',
+            trend: 'Assigned',
+          },
+          {
+            label: 'Session Tools',
+            value: 'Ready',
+            icon: RefreshCw,
+            color: 'text-primary',
+            bg: 'bg-primary/5',
+            trend: 'Manage',
+          },
         ].map((stat, i) => (
           <div key={i} className="card flex flex-col justify-between">
             <div className="flex justify-between items-start">
               <div className={`p-2 rounded-md ${stat.bg}`}>
                 <stat.icon className={`h-5 w-5 ${stat.color}`} />
               </div>
-              <span className="text-[10px] font-bold text-success bg-success/10 px-1.5 py-0.5 rounded uppercase">{stat.trend}</span>
+              <span className="text-[10px] font-bold text-success bg-success/10 px-1.5 py-0.5 rounded uppercase">
+                {stat.trend}
+              </span>
             </div>
             <div className="mt-4">
               <p className="text-xs font-semibold text-text-secondary uppercase tracking-wider">{stat.label}</p>
@@ -105,101 +183,124 @@ export default function LecturerOverview() {
         ))}
       </div>
 
-      {/* Quick Links */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <a href="/dashboard/lecturer/sessions" className="card hover:border-primary transition cursor-pointer group">
-          <div className="flex justify-between items-start mb-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Link href="/dashboard/lecturer/sessions" className="card hover:border-primary transition group">
+          <div className="flex justify-between items-start">
             <div>
-              <h3 className="text-lg font-bold text-text-primary group-hover:text-primary transition">View Sessions</h3>
-              <p className="text-sm text-text-secondary mt-1">Manage all your attendance sessions</p>
+              <h3 className="text-lg font-bold text-text-primary group-hover:text-primary transition">
+                Manage Sessions
+              </h3>
+              <p className="text-sm text-text-secondary mt-1">Start, stop, and review session history.</p>
             </div>
             <ArrowUpRight className="h-5 w-5 text-text-secondary group-hover:text-primary transition" />
           </div>
-        </a>
+        </Link>
 
-        <a href="/dashboard/lecturer/courses" className="card hover:border-primary transition cursor-pointer group">
-          <div className="flex justify-between items-start mb-4">
+        <Link href="/dashboard/lecturer/courses" className="card hover:border-primary transition group">
+          <div className="flex justify-between items-start">
             <div>
-              <h3 className="text-lg font-bold text-text-primary group-hover:text-primary transition">View Courses</h3>
-              <p className="text-sm text-text-secondary mt-1">Manage your assigned courses</p>
+              <h3 className="text-lg font-bold text-text-primary group-hover:text-primary transition">
+                Course Management
+              </h3>
+              <p className="text-sm text-text-secondary mt-1">See the classes assigned to you.</p>
             </div>
             <ArrowUpRight className="h-5 w-5 text-text-secondary group-hover:text-primary transition" />
           </div>
-        </a>
+        </Link>
+
+        <Link href="/dashboard/lecturer/live" className="card hover:border-primary transition group">
+          <div className="flex justify-between items-start">
+            <div>
+              <h3 className="text-lg font-bold text-text-primary group-hover:text-primary transition">
+                Live Attendance
+              </h3>
+              <p className="text-sm text-text-secondary mt-1">Monitor the current scan stream in real time.</p>
+            </div>
+            <ArrowUpRight className="h-5 w-5 text-text-secondary group-hover:text-primary transition" />
+          </div>
+        </Link>
       </div>
 
-      {/* Session Modal */}
-      <SessionModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSuccess={handleSessionCreated}
-        lecturerId={lecturerId}
-      />
-    </div>
-  );
-}
-
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Recent Sessions Table */}
         <div className="lg:col-span-2 space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-bold">Recent Sessions</h3>
-            <button className="btn-ghost text-xs">View all</button>
+            <h3 className="text-lg font-bold text-text-primary">Recent Sessions</h3>
+            <Link href="/dashboard/lecturer/sessions" className="btn-ghost text-xs">
+              View all
+            </Link>
           </div>
           <div className="card !p-0 overflow-hidden">
             <table className="w-full text-left">
               <thead className="bg-slate-50 border-b border-slate-100">
                 <tr>
                   <th className="px-6 py-3 text-xs font-bold text-text-secondary uppercase">Course</th>
-                  <th className="px-6 py-3 text-xs font-bold text-text-secondary uppercase">Date</th>
-                  <th className="px-6 py-3 text-xs font-bold text-text-secondary uppercase">Attendees</th>
-                  <th className="px-6 py-3 text-xs font-bold text-text-secondary uppercase text-right">Status</th>
+                  <th className="px-6 py-3 text-xs font-bold text-text-secondary uppercase">Started</th>
+                  <th className="px-6 py-3 text-xs font-bold text-text-secondary uppercase text-right">
+                    Status
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50 text-sm">
-                {[
-                  { course: 'CS101: Intro to CS', date: 'Oct 24, 2024', count: '142', status: 'Completed' },
-                  { course: 'MAT201: Calculus II', date: 'Oct 23, 2024', count: '89', status: 'Completed' },
-                  { course: 'PHY105: Physics I', date: 'Oct 22, 2024', count: '124', status: 'Completed' },
-                ].map((row, i) => (
-                  <tr key={i} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-6 py-4 font-semibold text-text-primary">{row.course}</td>
-                    <td className="px-6 py-4 text-text-secondary">{row.date}</td>
-                    <td className="px-6 py-4 font-medium">{row.count}</td>
-                    <td className="px-6 py-4 text-right">
-                      <span className="text-[10px] font-bold text-success bg-success/10 px-2 py-1 rounded-full uppercase tracking-tighter">
-                        {row.status}
-                      </span>
+                {recentSessions.length === 0 ? (
+                  <tr>
+                    <td colSpan={3} className="px-6 py-8 text-center text-text-secondary">
+                      No sessions yet. Create one from the button above.
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  recentSessions.map((session) => (
+                    <tr key={session._id} className="hover:bg-slate-50 transition-colors">
+                      <td className="px-6 py-4">
+                        <p className="font-semibold text-text-primary">{session.course.code}</p>
+                        <p className="text-xs text-text-secondary">{session.course.title}</p>
+                      </td>
+                      <td className="px-6 py-4 text-text-secondary">
+                        {new Date(session.startTime).toLocaleString()}
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <span className="text-[10px] font-bold text-success bg-success/10 px-2 py-1 rounded-full uppercase tracking-tighter">
+                          {session.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
         </div>
 
-        {/* Live Feed / Activity */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-bold">Activity Feed</h3>
+            <h3 className="text-lg font-bold text-text-primary">Activity Feed</h3>
             <MoreHorizontal className="h-4 w-4 text-slate-400 cursor-pointer" />
           </div>
           <div className="card space-y-6">
-            {[1,2,3,4].map(i => (
-              <div key={i} className="flex gap-4">
+            {[
+              'Students are scanning live for your active sessions.',
+              'Session analytics are now connected to your attendance data.',
+              'Use the reports page to export CSV or save a PDF copy.',
+            ].map((message, index) => (
+              <div key={message} className="flex gap-4">
                 <div className="h-2 w-2 rounded-full bg-primary mt-1.5 shrink-0" />
                 <div>
-                  <p className="text-sm text-text-primary leading-tight font-medium">
-                    New student registered for <span className="font-bold">CS101</span>
+                  <p className="text-sm text-text-primary leading-tight font-medium">{message}</p>
+                  <p className="text-[10px] text-text-secondary mt-1">
+                    {index === 0 ? 'LIVE NOW' : index === 1 ? 'TODAY' : 'READY'}
                   </p>
-                  <p className="text-[10px] text-text-secondary mt-1">2 MINUTES AGO</p>
                 </div>
               </div>
             ))}
-            <button className="w-full btn-secondary text-xs py-2 mt-2">
-              Refresh Feed
-            </button>
           </div>
         </div>
       </div>
-  
+
+      <SessionModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSuccess={handleSessionCreated}
+        lecturerId={profile?.id || ''}
+      />
+    </div>
+  );
+}

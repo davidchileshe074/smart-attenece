@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Play, StopCircle, Trash2, Eye, RefreshCw, AlertCircle } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { AlertCircle, Eye, Plus, RefreshCw, StopCircle, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 
 interface Session {
@@ -19,28 +19,40 @@ export default function LecturerSessionsPage() {
   const [error, setError] = useState('');
   const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    fetchSessions();
-  }, []);
-
-  const fetchSessions = async () => {
+  const loadSessions = async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/sessions');
-      const data = await res.json();
-      if (data.success) {
-        setSessions(data.data || []);
+      setError('');
+
+      const meRes = await fetch('/api/auth/me');
+      const meData = await meRes.json();
+
+      if (!meData.success) {
+        throw new Error(meData.error || 'Failed to load lecturer profile');
       }
-    } catch (err) {
-      setError('Failed to load sessions');
+
+      const res = await fetch(`/api/sessions?lecturerId=${meData.data.id}`);
+      const data = await res.json();
+
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to load sessions');
+      }
+
+      setSessions(data.data || []);
+    } catch (err: any) {
+      setError(err.message || 'Failed to load sessions');
     } finally {
       setLoading(false);
     }
   };
 
+  useEffect(() => {
+    loadSessions();
+  }, []);
+
   const handleRefresh = async () => {
     setRefreshing(true);
-    await fetchSessions();
+    await loadSessions();
     setRefreshing(false);
   };
 
@@ -57,7 +69,9 @@ export default function LecturerSessionsPage() {
       });
 
       if (res.ok) {
-        setSessions(sessions.map(s => s._id === sessionId ? { ...s, status: 'expired' } : s));
+        setSessions((current) =>
+          current.map((session) => (session._id === sessionId ? { ...session, status: 'expired' } : session))
+        );
       }
     } catch (err) {
       alert('Failed to end session');
@@ -72,7 +86,7 @@ export default function LecturerSessionsPage() {
     try {
       const res = await fetch(`/api/sessions/${sessionId}`, { method: 'DELETE' });
       if (res.ok) {
-        setSessions(sessions.filter(s => s._id !== sessionId));
+        setSessions((current) => current.filter((session) => session._id !== sessionId));
       } else {
         const data = await res.json();
         alert(data.error || 'Failed to delete session');
@@ -81,6 +95,16 @@ export default function LecturerSessionsPage() {
       alert('Failed to delete session');
     }
   };
+
+  const stats = useMemo(() => {
+    const active = sessions.filter((session) => session.status === 'active').length;
+    const ended = sessions.filter((session) => session.status === 'expired').length;
+    return {
+      total: sessions.length,
+      active,
+      ended,
+    };
+  }, [sessions]);
 
   const formatTime = (dateString: string) => new Date(dateString).toLocaleString();
   const formatDuration = (startTime: string, endTime: string) => {
@@ -103,23 +127,41 @@ export default function LecturerSessionsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>
+          <p className="text-xs font-bold uppercase tracking-widest text-text-secondary">Session Management</p>
           <h1 className="text-3xl font-bold text-text-primary">Attendance Sessions</h1>
           <p className="text-text-secondary mt-1">Manage and monitor your attendance sessions</p>
         </div>
-        <button
-          onClick={handleRefresh}
-          disabled={refreshing}
-          className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg font-semibold text-text-primary transition disabled:opacity-50"
-        >
-          <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-          {refreshing ? 'Refreshing...' : 'Refresh'}
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <Link href="/dashboard/lecturer" className="btn-primary gap-2">
+            <Plus className="h-4 w-4" />
+            New Session
+          </Link>
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg font-semibold text-text-primary transition disabled:opacity-50"
+          >
+            <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+            {refreshing ? 'Refreshing...' : 'Refresh'}
+          </button>
+        </div>
       </div>
 
-      {/* Error Alert */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        {[
+          { label: 'Total Sessions', value: stats.total },
+          { label: 'Active', value: stats.active },
+          { label: 'Ended', value: stats.ended },
+        ].map((stat) => (
+          <div key={stat.label} className="card">
+            <p className="text-xs font-bold uppercase tracking-widest text-text-secondary">{stat.label}</p>
+            <h2 className="text-3xl font-black text-text-primary mt-2">{stat.value}</h2>
+          </div>
+        ))}
+      </div>
+
       {error && (
         <div className="flex gap-3 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
           <AlertCircle className="h-5 w-5 flex-shrink-0" />
@@ -127,16 +169,15 @@ export default function LecturerSessionsPage() {
         </div>
       )}
 
-      {/* Sessions Table */}
       {loading ? (
         <div className="text-center py-12">
-          <div className="inline-block animate-spin text-2xl mb-2">⏳</div>
+          <div className="inline-block animate-spin text-2xl mb-2">Loading</div>
           <p className="text-text-secondary">Loading sessions...</p>
         </div>
       ) : sessions.length === 0 ? (
         <div className="card text-center py-12">
           <p className="text-text-secondary mb-4">No sessions yet</p>
-          <p className="text-sm text-text-secondary">Create a new session to get started</p>
+          <p className="text-sm text-text-secondary">Create a new session from your dashboard to get started</p>
         </div>
       ) : (
         <div className="card overflow-hidden">
@@ -160,15 +201,19 @@ export default function LecturerSessionsPage() {
                         <p className="text-xs text-text-secondary">{session.course.title}</p>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-text-secondary text-sm">
-                      {formatTime(session.startTime)}
-                    </td>
+                    <td className="px-6 py-4 text-text-secondary text-sm">{formatTime(session.startTime)}</td>
                     <td className="px-6 py-4 text-text-secondary text-sm">
                       {formatDuration(session.startTime, session.endTime)}
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`inline-block px-3 py-1 text-xs font-bold rounded-full ${getStatusColor(session.status)}`}>
-                        {session.status === 'active' ? '🔴 Active' : session.status === 'expired' ? '⏹ Ended' : '📅 Scheduled'}
+                      <span
+                        className={`inline-block px-3 py-1 text-xs font-bold rounded-full ${getStatusColor(session.status)}`}
+                      >
+                        {session.status === 'active'
+                          ? 'Active'
+                          : session.status === 'expired'
+                          ? 'Ended'
+                          : 'Scheduled'}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right">
@@ -207,38 +252,6 @@ export default function LecturerSessionsPage() {
           </div>
         </div>
       )}
-    </div>
-  );
-}
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {sessions.map((session: any) => (
-              <tr key={session._id} className="hover:bg-gray-50/50 transition-colors">
-                <td className="px-6 py-4">
-                  <div className="font-bold text-brand-dark">{session.course?.title}</div>
-                  <div className="text-xs text-gray-500">{session.course?.code}</div>
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-600">
-                  {new Date(session.startTime).toLocaleDateString()}
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-600">
-                  {Math.round((new Date(session.endTime).getTime() - new Date(session.startTime).getTime()) / 60000)} mins
-                </td>
-                <td className="px-6 py-4">
-                  <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${
-                    session.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
-                  }`}>
-                    {session.status}
-                  </span>
-                </td>
-                <td className="px-6 py-4 text-right">
-                  <button className="text-brand-blue font-bold text-sm hover:underline">View Report</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
     </div>
   );
 }
