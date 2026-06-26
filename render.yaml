@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: smart-attendance-system
+    env: node
+    plan: starter
+    region: oregon
+    branch: main
+    buildCommand: npm run build
+    startCommand: npm run start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        fromSecret: MONGODB_URI
+      - key: REDIS_URL
+        fromSecret: REDIS_URL

@@ -12,9 +12,17 @@ import {
 } from 'lucide-react';
 import { ErrorState, LoadingState } from '@/components/ui/status-state';
 
+type AttendanceHistoryRecord = {
+  _id: string;
+  course?: { code?: string; title?: string };
+  session?: { startTime?: string; endTime?: string; status?: string };
+  timestamp: string;
+  status: 'present' | 'late';
+};
+
 export default function StudentHistoryPage() {
   const [loading, setLoading] = useState(true);
-  const [history, setHistory] = useState<any[]>([]);
+  const [history, setHistory] = useState<AttendanceHistoryRecord[]>([]);
   const [studentName, setStudentName] = useState('Student');
   const [studentCode, setStudentCode] = useState('');
   const [summary, setSummary] = useState({
@@ -55,8 +63,8 @@ export default function StudentHistoryPage() {
             totalRecords: 0,
           }
         );
-      } catch (err: any) {
-        setError(err.message || 'Failed to load attendance history');
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : 'Failed to load attendance history');
       } finally {
         setLoading(false);
       }
@@ -114,7 +122,7 @@ export default function StudentHistoryPage() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <p className="text-xs font-bold uppercase tracking-widest text-text-secondary">Attendance History</p>
-          <h1 className="text-2xl font-bold text-text-primary mt-1">{studentName}'s Record</h1>
+          <h1 className="text-2xl font-bold text-text-primary mt-1">{studentName}&apos;s Record</h1>
           <p className="text-text-secondary text-sm mt-1">
             Review your activity, trend, and export your records.
           </p>

@@ -13,6 +13,8 @@ type AttendanceRecord = {
   status: 'present' | 'late';
 };
 
+type ScanResult = { success?: boolean; message?: string; error?: string };
+
 export default function StudentDashboard() {
   const [loading, setLoading] = useState(true);
   const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -57,7 +59,7 @@ export default function StudentDashboard() {
             totalRecords: 0,
           }
         );
-      } catch (error) {
+      } catch {
         setStatusMessage({
           type: 'error',
           text: 'Unable to load your profile or attendance summary.',
@@ -70,11 +72,11 @@ export default function StudentDashboard() {
     loadStudent();
   }, []);
 
-  const handleScanSuccess = (result: any) => {
+  const handleScanSuccess = (result: ScanResult) => {
     if (result.success) {
-      setStatusMessage({ type: 'success', text: result.message });
+      setStatusMessage({ type: 'success', text: result.message || 'Attendance marked successfully.' });
     } else {
-      setStatusMessage({ type: 'error', text: result.error });
+      setStatusMessage({ type: 'error', text: result.error || 'Unable to mark attendance.' });
     }
 
     setTimeout(() => setStatusMessage(null), 5000);

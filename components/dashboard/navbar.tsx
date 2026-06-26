@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { Bell, Search, User, Menu } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 
@@ -7,18 +8,46 @@ interface NavbarProps {
   onMenuClick?: () => void;
 }
 
+type NavbarProfile = {
+  name: string;
+  role: 'student' | 'lecturer' | 'admin';
+};
+
 export default function Navbar({ onMenuClick }: NavbarProps) {
   const pathname = usePathname();
+  const [profile, setProfile] = useState<NavbarProfile | null>(null);
+  const [profileLoading, setProfileLoading] = useState(true);
 
-  let roleLabel = 'Student';
-  let roleHint = 'Student Portal';
-  if (pathname.includes('/lecturer')) {
-    roleLabel = 'Lecturer';
-    roleHint = 'Teaching Hub';
-  } else if (pathname.includes('/admin')) {
-    roleLabel = 'Admin';
-    roleHint = 'System Console';
-  }
+  useEffect(() => {
+    const controller = new AbortController();
+
+    const loadProfile = async () => {
+      try {
+        const res = await fetch('/api/auth/me', { signal: controller.signal });
+        const data = await res.json();
+
+        if (data.success && data.data) {
+          setProfile({
+            name: data.data.name || 'User',
+            role: data.data.role || 'student',
+          });
+        }
+      } catch {
+        // Keep the route-based fallback if profile fetch fails.
+      } finally {
+        setProfileLoading(false);
+      }
+    };
+
+    void loadProfile();
+
+    return () => controller.abort();
+  }, []);
+
+  const role = profile?.role || (pathname.includes('/lecturer') ? 'lecturer' : pathname.includes('/admin') ? 'admin' : 'student');
+  const roleLabel = role === 'lecturer' ? 'Lecturer' : role === 'admin' ? 'Admin' : 'Student';
+  const roleHint = role === 'lecturer' ? 'Teaching Hub' : role === 'admin' ? 'System Console' : 'Student Portal';
+  const displayName = profileLoading ? 'Loading profile...' : profile?.name || 'Guest';
 
   return (
     <header className="h-16 bg-white/80 backdrop-blur-md border-b border-slate-100 fixed top-0 right-0 left-0 md:left-64 z-40 px-6 flex items-center justify-between">
@@ -49,7 +78,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
 
         <div className="flex items-center gap-3 cursor-pointer group">
           <div className="text-right hidden sm:block">
-            <p className="text-xs font-bold text-text-primary group-hover:text-primary transition-colors">David Chileshe</p>
+            <p className="text-xs font-bold text-text-primary group-hover:text-primary transition-colors">{displayName}</p>
             <p className="text-[10px] text-text-secondary uppercase tracking-wider font-semibold">{roleLabel} - {roleHint}</p>
           </div>
           <div className="h-8 w-8 bg-slate-100 rounded-md flex items-center justify-center border border-slate-200 group-hover:border-primary/30 transition-all">

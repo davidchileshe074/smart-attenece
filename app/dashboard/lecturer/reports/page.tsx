@@ -19,6 +19,9 @@ type Summary = {
   presentCount: number;
   lateCount: number;
   attendanceRate: number;
+  classAttendanceRate?: number;
+  classSize?: number;
+  sessionCount?: number;
   lowAttendanceAlerts: Array<{
     name: string;
     studentId: string;
@@ -142,7 +145,9 @@ export default function LecturerReportsPage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="card">
           <p className="text-xs font-bold uppercase tracking-widest text-text-secondary">Attendance Rate</p>
-          <h2 className="text-3xl font-black text-text-primary mt-2">{summary?.attendanceRate || 0}%</h2>
+          <h2 className="text-3xl font-black text-text-primary mt-2">
+            {summary?.classAttendanceRate ?? summary?.attendanceRate ?? 0}%
+          </h2>
         </div>
         <div className="card">
           <p className="text-xs font-bold uppercase tracking-widest text-text-secondary">Present Marks</p>

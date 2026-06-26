@@ -78,9 +78,14 @@ export default function LecturerOverview() {
       }
 
       if (attendanceData.success) {
+        const attendanceRate =
+          attendanceData.summary?.classAttendanceRate ??
+          attendanceData.summary?.attendanceRate ??
+          0;
+
         setStats((current) => ({
           ...current,
-          avgAttendance: attendanceData.summary?.attendanceRate || 0,
+          avgAttendance: attendanceRate,
         }));
       }
     } catch (err: unknown) {

@@ -18,7 +18,6 @@ interface SessionData {
 export default function SessionDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: sessionId } = use(params);
   const [session, setSession] = useState<SessionData | null>(null);
-  const [qrCodeImage, setQrCodeImage] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [timeRemaining, setTimeRemaining] = useState(0);
@@ -31,18 +30,7 @@ export default function SessionDetailPage({ params }: { params: Promise<{ id: st
 
       if (data.success) {
         setSession(data.data);
-
-        if (data.data.status === 'active') {
-          // Fetch QR code image only while the session is active.
-          const qrRes = await fetch(`/api/qr/generate?sessionId=${sessionId}`);
-          const qrData = await qrRes.json();
-          if (qrData.success) {
-            setQrCodeImage(qrData.data.qrImage);
-          } else {
-            setQrCodeImage('');
-          }
-        } else {
-          setQrCodeImage('');
+        if (data.data.status !== 'active') {
           setTimeRemaining(0);
         }
 
@@ -171,14 +159,11 @@ export default function SessionDetailPage({ params }: { params: Promise<{ id: st
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* QR Code Display */}
         <div className="lg:col-span-1">
-          {qrCodeImage && (
-            <QRDisplay
-              sessionId={session._id}
-              qrCodeData={qrCodeImage}
-              courseName={`${session.course.code} - ${session.course.title}`}
-              endTime={session.endTime}
-            />
-          )}
+          <QRDisplay
+            sessionId={session._id}
+            courseName={`${session.course.code} - ${session.course.title}`}
+            endTime={session.endTime}
+          />
         </div>
 
         {/* Live Attendance */}

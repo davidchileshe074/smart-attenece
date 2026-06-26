@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Image from 'next/image';
 import { ErrorState, LoadingState } from '@/components/ui/status-state';
 
@@ -14,7 +14,7 @@ export default function QRGenerator({ sessionId }: QRGeneratorProps) {
   const [error, setError] = useState<string | null>(null);
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
 
-  const fetchQR = async () => {
+  const fetchQR = useCallback(async () => {
     try {
       setLoading(true);
       const res = await fetch(`/api/qr/generate?sessionId=${sessionId}`);
@@ -30,18 +30,32 @@ export default function QRGenerator({ sessionId }: QRGeneratorProps) {
       } else {
         setError(result.error);
       }
-    } catch (err) {
+    } catch {
       setError('Failed to load QR code');
     } finally {
       setLoading(false);
     }
-  };
+  }, [sessionId]);
 
   useEffect(() => {
-    if (sessionId) {
-      fetchQR();
-    }
-  }, [sessionId]);
+    if (!sessionId) return;
+
+    const initialLoad = window.setTimeout(() => {
+      void fetchQR();
+    }, 0);
+
+    return () => window.clearTimeout(initialLoad);
+  }, [fetchQR, sessionId]);
+
+  useEffect(() => {
+    if (!sessionId) return;
+
+    const timer = window.setInterval(() => {
+      void fetchQR();
+    }, 3000);
+
+    return () => window.clearInterval(timer);
+  }, [fetchQR, sessionId]);
 
   useEffect(() => {
     if (timeLeft === null || timeLeft <= 0) return;

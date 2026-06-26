@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { AlertCircle, Download, Mail, ShieldAlert, TrendingUp } from 'lucide-react';
+import { Download, Mail, ShieldAlert, TrendingUp } from 'lucide-react';
+import { ErrorState, LoadingState } from '@/components/ui/status-state';
 
 type AttendanceRecord = {
   _id: string;
@@ -17,6 +18,9 @@ type Summary = {
   presentCount: number;
   lateCount: number;
   attendanceRate: number;
+  classAttendanceRate?: number;
+  classSize?: number;
+  sessionCount?: number;
   lowAttendanceAlerts: Array<{
     name: string;
     studentId: string;
@@ -45,8 +49,8 @@ export default function AdminReportsPage() {
 
         setRecords(data.data || []);
         setSummary(data.summary || null);
-      } catch (err: any) {
-        setError(err.message || 'Failed to load reports');
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : 'Failed to load reports');
       } finally {
         setLoading(false);
       }
@@ -97,21 +101,11 @@ export default function AdminReportsPage() {
   );
 
   if (loading) {
-    return (
-      <div className="card text-center py-16">
-        <div className="inline-block animate-spin text-2xl mb-3">Loading</div>
-        <p className="text-text-secondary">Building system-wide analytics...</p>
-      </div>
-    );
+    return <LoadingState title="Loading system reports" description="Building attendance analytics for the whole system." compact />;
   }
 
   if (error) {
-    return (
-      <div className="flex gap-3 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
-        <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
-        <p>{error}</p>
-      </div>
-    );
+    return <ErrorState title="Unable to load system reports" message={error} onRetry={() => window.location.reload()} />;
   }
 
   return (
@@ -139,7 +133,9 @@ export default function AdminReportsPage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="card">
           <p className="text-xs font-bold uppercase tracking-widest text-text-secondary">Attendance Rate</p>
-          <h2 className="text-3xl font-black text-text-primary mt-2">{summary?.attendanceRate || 0}%</h2>
+          <h2 className="text-3xl font-black text-text-primary mt-2">
+            {summary?.classAttendanceRate ?? summary?.attendanceRate ?? 0}%
+          </h2>
           <p className="text-sm text-text-secondary mt-1">Across all recorded marks</p>
         </div>
         <div className="card">

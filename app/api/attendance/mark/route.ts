@@ -4,6 +4,20 @@ import Session from '@/models/session.model';
 import Attendance from '@/models/attendance.model';
 import User from '@/models/user.model';
 import { publishRealtimeEvent } from '@/lib/realtime';
+import { verifyRotatingQrToken } from '@/lib/dynamic-qr';
+
+type PopulatedSession = {
+  _id: unknown;
+  status: 'active' | 'expired' | 'scheduled';
+  endTime: Date;
+  lecturer: unknown;
+  course: {
+    _id: unknown;
+    code: string;
+    title: string;
+  };
+  save: () => Promise<unknown>;
+};
 
 export async function POST(req: Request) {
   try {
@@ -18,11 +32,20 @@ export async function POST(req: Request) {
       );
     }
 
-    // 1. Find the session linked to this QR code
-    const session = await Session.findOne({ qrCode }).populate('course');
+    let session: PopulatedSession | null = null;
+
+    // 1. Try to resolve the rotating token first.
+    const tokenMatch = verifyRotatingQrToken(qrCode, process.env.JWT_SECRET || 'fallback_secret_for_dev_only');
+
+    if (tokenMatch.valid && tokenMatch.sessionId) {
+      session = (await Session.findById(tokenMatch.sessionId).populate('course')) as PopulatedSession | null;
+    } else {
+      // Backward compatibility for legacy static tokens already stored in the database.
+      session = (await Session.findOne({ qrCode }).populate('course')) as PopulatedSession | null;
+    }
 
     if (!session) {
-      return NextResponse.json({ success: false, error: 'Invalid QR Code' }, { status: 404 });
+      return NextResponse.json({ success: false, error: 'Invalid or expired QR Code' }, { status: 404 });
     }
 
     // 2. Check if session is active

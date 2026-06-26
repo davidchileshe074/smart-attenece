@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import Session from '@/models/session.model';
 import { generateQRCode } from '@/lib/qr';
+import { createRotatingQrToken, QR_ROTATION_MS } from '@/lib/dynamic-qr';
 
 export async function GET(req: Request) {
   try {
@@ -23,17 +24,21 @@ export async function GET(req: Request) {
       return NextResponse.json({ success: false, error: 'Session is no longer active' }, { status: 400 });
     }
 
-    // Generate the QR image data URL
-    const qrImage = await generateQRCode(session.qrCode);
+    const { token, expiresAt } = createRotatingQrToken(String(session._id), session.qrCode);
+    const qrImage = await generateQRCode(token);
 
     return NextResponse.json({
       success: true,
       data: {
         qrImage,
-        expiresAt: session.endTime,
+        expiresAt,
+        rotationIntervalMs: QR_ROTATION_MS,
       }
     }, { status: 200 });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json(
+      { success: false, error: error instanceof Error ? error.message : 'Failed to generate QR code' },
+      { status: 500 }
+    );
   }
 }
