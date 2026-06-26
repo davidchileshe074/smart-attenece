@@ -95,52 +95,67 @@ export default function StudentDashboard() {
   }, [summary.attendanceRate]);
 
   if (loading) {
-    return <LoadingState title="Loading student dashboard" description="Fetching your profile, attendance summary, and recent activity." />;
+    return (
+      <LoadingState
+        title="Loading student dashboard"
+        description="Fetching your profile, attendance summary, and recent activity."
+      />
+    );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 p-6 md:p-12">
-      <div className="max-w-5xl mx-auto space-y-8">
+    <div className="min-h-screen bg-slate-50 px-4 py-5 sm:px-6 md:px-12 md:py-12">
+      <div className="mx-auto max-w-5xl space-y-6 sm:space-y-8">
         <section className="rounded-xl overflow-hidden bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 text-slate-900 shadow-lg">
-          <div className="p-8 md:p-10 grid grid-cols-1 lg:grid-cols-[1.25fr_0.75fr] gap-8 items-end">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.35em] text-primary">My Attendance Hub</p>
-              <h1 className="text-3xl md:text-4xl font-black mt-3">Welcome back, {studentName}.</h1>
-              <p className="text-slate-600 mt-4 max-w-2xl">
+          <div className="p-5 sm:p-6 md:p-10 grid grid-cols-1 lg:grid-cols-[1.25fr_0.75fr] gap-5 sm:gap-6 lg:gap-8 items-start">
+            <div className="space-y-4">
+              <p className="text-[10px] sm:text-xs font-bold uppercase tracking-[0.3em] sm:tracking-[0.35em] text-primary">
+                My Attendance Hub
+              </p>
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-black leading-tight">
+                Welcome back, {studentName}.
+              </h1>
+              <p className="text-sm sm:text-base text-slate-600 max-w-2xl">
                 Scan into class, review your record, and keep an eye on your attendance trend from one personal dashboard.
               </p>
-              <div className="mt-6 flex flex-wrap gap-3">
-                <Link href="/dashboard/student/scan" className="btn-primary gap-2 bg-primary text-white hover:bg-primary/90">
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Link
+                  href="/dashboard/student/scan"
+                  className="btn-primary w-full sm:w-auto justify-center gap-2 bg-primary text-white hover:bg-primary/90"
+                >
                   <ScanLine className="h-4 w-4" />
                   Scan QR
                 </Link>
-                <Link href="/dashboard/student/history" className="btn-secondary gap-2 bg-slate-200 border-slate-300 text-slate-900 hover:bg-slate-300">
+                <Link
+                  href="/dashboard/student/history"
+                  className="btn-secondary w-full sm:w-auto justify-center gap-2 bg-slate-200 border-slate-300 text-slate-900 hover:bg-slate-300"
+                >
                   <History className="h-4 w-4" />
                   View History
                 </Link>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-lg bg-white border border-slate-300 p-4">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4">
+              <div className="rounded-lg bg-white border border-slate-300 p-3 sm:p-4 min-h-[104px] sm:min-h-[120px]">
                 <p className="text-[10px] uppercase tracking-[0.3em] text-slate-600">Attendance</p>
-                <h2 className="text-3xl font-black mt-2">{summary.attendanceRate}%</h2>
-                <p className="text-xs text-slate-600 mt-1">current rate</p>
+                <h2 className="text-2xl sm:text-3xl font-black mt-2">{summary.attendanceRate}%</h2>
+                <p className="text-[11px] sm:text-xs text-slate-600 mt-1">current rate</p>
               </div>
-              <div className="rounded-lg bg-white border border-slate-300 p-4">
+              <div className="rounded-lg bg-white border border-slate-300 p-3 sm:p-4 min-h-[104px] sm:min-h-[120px]">
                 <p className="text-[10px] uppercase tracking-[0.3em] text-slate-600">Mood</p>
-                <h2 className="text-3xl font-black mt-2">{attendanceMood}</h2>
-                <p className="text-xs text-slate-600 mt-1">progress signal</p>
+                <h2 className="text-2xl sm:text-3xl font-black mt-2 leading-tight">{attendanceMood}</h2>
+                <p className="text-[11px] sm:text-xs text-slate-600 mt-1">progress signal</p>
               </div>
-              <div className="rounded-lg bg-white border border-slate-300 p-4">
+              <div className="rounded-lg bg-white border border-slate-300 p-3 sm:p-4 min-h-[104px] sm:min-h-[120px]">
                 <p className="text-[10px] uppercase tracking-[0.3em] text-slate-600">Present</p>
-                <h2 className="text-3xl font-black mt-2">{summary.presentCount}</h2>
-                <p className="text-xs text-slate-600 mt-1">successful scans</p>
+                <h2 className="text-2xl sm:text-3xl font-black mt-2">{summary.presentCount}</h2>
+                <p className="text-[11px] sm:text-xs text-slate-600 mt-1">successful scans</p>
               </div>
-              <div className="rounded-lg bg-white border border-slate-300 p-4">
+              <div className="rounded-lg bg-white border border-slate-300 p-3 sm:p-4 min-h-[104px] sm:min-h-[120px]">
                 <p className="text-[10px] uppercase tracking-[0.3em] text-slate-600">Code</p>
-                <h2 className="text-xl font-black mt-2 truncate">{studentCode || 'N/A'}</h2>
-                <p className="text-xs text-slate-600 mt-1">student profile</p>
+                <h2 className="text-lg sm:text-xl font-black mt-2 truncate">{studentCode || 'N/A'}</h2>
+                <p className="text-[11px] sm:text-xs text-slate-600 mt-1">student profile</p>
               </div>
             </div>
           </div>
@@ -157,31 +172,31 @@ export default function StudentDashboard() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="card">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
+          <div className="card !p-4 sm:!p-5">
             <p className="text-[10px] font-bold uppercase tracking-widest text-text-secondary">Attendance Rate</p>
-            <h2 className="text-3xl font-black text-text-primary mt-2">{summary.attendanceRate}%</h2>
+            <h2 className="text-2xl sm:text-3xl font-black text-text-primary mt-2">{summary.attendanceRate}%</h2>
           </div>
-          <div className="card">
+          <div className="card !p-4 sm:!p-5">
             <p className="text-[10px] font-bold uppercase tracking-widest text-text-secondary">Present</p>
-            <h2 className="text-3xl font-black text-success mt-2">{summary.presentCount}</h2>
+            <h2 className="text-2xl sm:text-3xl font-black text-success mt-2">{summary.presentCount}</h2>
           </div>
-          <div className="card">
+          <div className="card !p-4 sm:!p-5">
             <p className="text-[10px] font-bold uppercase tracking-widest text-text-secondary">Late</p>
-            <h2 className="text-3xl font-black text-warning mt-2">{summary.lateCount}</h2>
+            <h2 className="text-2xl sm:text-3xl font-black text-warning mt-2">{summary.lateCount}</h2>
           </div>
-          <div className="card">
+          <div className="card !p-4 sm:!p-5">
             <p className="text-[10px] font-bold uppercase tracking-widest text-text-secondary">Records</p>
-            <h2 className="text-3xl font-black text-primary mt-2">{summary.totalRecords}</h2>
+            <h2 className="text-2xl sm:text-3xl font-black text-primary mt-2">{summary.totalRecords}</h2>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-[1.2fr_0.8fr] gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-[1.2fr_0.8fr] gap-4 sm:gap-6">
           <section className="card bg-gradient-to-br from-white to-sky-50">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div>
-                <h2 className="text-2xl font-bold text-text-primary mb-2">Ready to scan?</h2>
-                <p className="text-text-secondary">
+                <h2 className="text-xl sm:text-2xl font-bold text-text-primary mb-2">Ready to scan?</h2>
+                <p className="text-sm sm:text-base text-text-secondary">
                   Use the QR reader when your lecturer opens a live session.
                 </p>
               </div>
@@ -191,7 +206,7 @@ export default function StudentDashboard() {
               </div>
             </div>
 
-            <div className="mt-8">
+            <div className="mt-6 sm:mt-8">
               {studentId ? (
                 <QRScanner
                   studentId={studentId}
@@ -208,9 +223,9 @@ export default function StudentDashboard() {
 
           <section className="space-y-4">
             <div className="card">
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between gap-3 mb-4">
                 <h3 className="text-lg font-bold text-text-primary">Your Recent Attendance</h3>
-                <Link href="/dashboard/student/history" className="btn-ghost text-xs">
+                <Link href="/dashboard/student/history" className="btn-ghost text-xs shrink-0">
                   Full history
                 </Link>
               </div>
@@ -218,9 +233,9 @@ export default function StudentDashboard() {
                 {attendance.slice(0, 4).map((record) => (
                   <div
                     key={record._id}
-                    className="flex justify-between items-center p-4 bg-white rounded-lg border border-gray-100 shadow-sm"
+                    className="flex items-start justify-between gap-3 p-4 bg-white rounded-lg border border-gray-100 shadow-sm"
                   >
-                    <div>
+                    <div className="min-w-0">
                       <p className="font-bold text-gray-800">{record.course?.code}</p>
                       <p className="text-xs text-gray-500">{new Date(record.timestamp).toLocaleString()}</p>
                     </div>

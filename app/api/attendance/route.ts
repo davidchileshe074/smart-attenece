@@ -26,10 +26,9 @@ function summarize(records: AttendanceRecord[], options: SummaryOptions = {}) {
   const presentCount = records.filter((record) => record.status === 'present').length;
   const lateCount = records.filter((record) => record.status === 'late').length;
   const attendanceRate = totalRecords > 0 ? Math.round((presentCount / totalRecords) * 100) : 0;
-  const benchmarkRecords =
-    options.classSize && options.sessionCount ? options.classSize * options.sessionCount : 0;
+  const totalStudents = options.classSize || 0;
   const classAttendanceRate =
-    benchmarkRecords > 0 ? Math.round((presentCount / benchmarkRecords) * 100) : attendanceRate;
+    totalStudents > 0 ? Math.min(100, Math.round((presentCount / totalStudents) * 100)) : attendanceRate;
 
   const studentMap = new Map<string, { name: string; studentId: string; email?: string; present: number; total: number }>();
 
@@ -67,7 +66,8 @@ function summarize(records: AttendanceRecord[], options: SummaryOptions = {}) {
     lateCount,
     attendanceRate,
     classAttendanceRate,
-    classSize: options.classSize || 0,
+    classSize: totalStudents,
+    totalStudents,
     sessionCount: options.sessionCount || 0,
     lowAttendanceAlerts,
   };

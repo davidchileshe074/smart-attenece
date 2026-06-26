@@ -119,15 +119,18 @@ export default function QRScanner({ studentId, onSuccess, onError }: QRScannerPr
   };
 
   return (
-    <div className="w-full max-w-md mx-auto space-y-4">
+    <div className="w-full max-w-none sm:max-w-md mx-auto space-y-4">
       <div className="grid grid-cols-1 gap-3">
         {!scanning ? (
-          <button onClick={() => setScanning(true)} className="btn-primary w-full py-6 text-xl shadow-2xl">
-            <Camera className="h-8 w-8" />
+          <button
+            onClick={() => setScanning(true)}
+            className="btn-primary w-full justify-center py-4 sm:py-6 text-base sm:text-xl shadow-2xl"
+          >
+            <Camera className="h-5 w-5 sm:h-8 sm:w-8" />
             Open QR Scanner
           </button>
         ) : (
-          <div className="glass-card">
+          <div className="glass-card w-full">
             <div id={CAMERA_SCANNER_ID} className="overflow-hidden rounded-xl" />
             <button onClick={() => setScanning(false)} className="w-full mt-4 py-2 text-gray-500 font-semibold">
               Cancel Camera Scan
@@ -136,7 +139,7 @@ export default function QRScanner({ studentId, onSuccess, onError }: QRScannerPr
         )}
       </div>
 
-      <div className="rounded-2xl border border-dashed border-slate-300 bg-white/80 p-5 shadow-sm">
+      <div className="rounded-2xl border border-dashed border-slate-300 bg-white/80 p-4 sm:p-5 shadow-sm">
         <input
           ref={fileInputRef}
           type="file"
@@ -146,7 +149,7 @@ export default function QRScanner({ studentId, onSuccess, onError }: QRScannerPr
         />
 
         <div
-          className={`rounded-xl border-2 border-dashed p-5 text-center transition ${
+          className={`rounded-xl border-2 border-dashed p-4 sm:p-5 text-center transition ${
             dragActive ? 'border-primary bg-primary/5' : 'border-slate-200 bg-slate-50'
           }`}
           onDragEnter={(event) => {
@@ -176,7 +179,7 @@ export default function QRScanner({ studentId, onSuccess, onError }: QRScannerPr
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={imageBusy}
-            className="mt-4 inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+            className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
           >
             <Upload className="h-4 w-4" />
             {imageBusy ? 'Scanning...' : 'Choose Image'}

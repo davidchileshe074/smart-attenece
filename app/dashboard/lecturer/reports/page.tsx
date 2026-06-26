@@ -21,6 +21,7 @@ type Summary = {
   attendanceRate: number;
   classAttendanceRate?: number;
   classSize?: number;
+  totalStudents?: number;
   sessionCount?: number;
   lowAttendanceAlerts: Array<{
     name: string;
@@ -148,20 +149,30 @@ export default function LecturerReportsPage() {
           <h2 className="text-3xl font-black text-text-primary mt-2">
             {summary?.classAttendanceRate ?? summary?.attendanceRate ?? 0}%
           </h2>
+          <p className="text-sm text-text-secondary mt-1">Benchmark uses the full class size.</p>
         </div>
         <div className="card">
-          <p className="text-xs font-bold uppercase tracking-widest text-text-secondary">Present Marks</p>
+          <p className="text-xs font-bold uppercase tracking-widest text-text-secondary">Present Students</p>
           <h2 className="text-3xl font-black text-success mt-2">{summary?.presentCount || 0}</h2>
+          <p className="text-sm text-text-secondary mt-1">Students marked present.</p>
         </div>
         <div className="card">
-          <p className="text-xs font-bold uppercase tracking-widest text-text-secondary">Late Marks</p>
+          <p className="text-xs font-bold uppercase tracking-widest text-text-secondary">Late Students</p>
           <h2 className="text-3xl font-black text-warning mt-2">{summary?.lateCount || 0}</h2>
+          <p className="text-sm text-text-secondary mt-1">Students marked late.</p>
         </div>
         <div className="card">
-          <p className="text-xs font-bold uppercase tracking-widest text-text-secondary">Alerts</p>
-          <h2 className="text-3xl font-black text-error mt-2">{alertCount}</h2>
+          <p className="text-xs font-bold uppercase tracking-widest text-text-secondary">Total Students</p>
+          <h2 className="text-3xl font-black text-primary mt-2">{summary?.totalStudents ?? summary?.classSize ?? 0}</h2>
+          <p className="text-sm text-text-secondary mt-1">Students provisioned in the class.</p>
         </div>
       </div>
+
+      <p className="text-sm text-text-secondary">
+        {alertCount > 0
+          ? `${alertCount} student${alertCount === 1 ? '' : 's'} are currently below the 75% attendance threshold.`
+          : 'No students are currently below the 75% attendance threshold.'}
+      </p>
 
       <div className="grid grid-cols-1 xl:grid-cols-[1.2fr_0.8fr] gap-6">
         <div className="card">

@@ -26,7 +26,7 @@ export default function Home() {
             </svg>
           </Link>
           <Link href="/login" className="btn-secondary w-full sm:w-auto">
-            Lecturer Login
+          Login
           </Link>
         </div>
 

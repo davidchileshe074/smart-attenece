@@ -23,7 +23,7 @@ export default function Preloader() {
           Smart Attendance
         </p>
         <div className="mt-4 flex items-center gap-2 text-text-secondary">
-          <Loader2 className="h-4 w-4 animate-spin" />
+         
           <span className="text-xs font-medium">Loading workspace</span>
         </div>
         <div className="w-32 h-0.5 bg-slate-100 mt-4 overflow-hidden rounded-full">

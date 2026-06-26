@@ -37,6 +37,7 @@ export default function LecturerOverview() {
     activeSessions: 0,
     totalCourses: 0,
     avgAttendance: 0,
+    totalStudents: 0,
   });
   const [recentSessions, setRecentSessions] = useState<Session[]>([]);
 
@@ -86,6 +87,7 @@ export default function LecturerOverview() {
         setStats((current) => ({
           ...current,
           avgAttendance: attendanceRate,
+          totalStudents: attendanceData.summary?.totalStudents ?? attendanceData.summary?.classSize ?? 0,
         }));
       }
     } catch (err: unknown) {
@@ -172,9 +174,9 @@ export default function LecturerOverview() {
               <p className="text-xs text-slate-600 mt-1">system average</p>
             </div>
             <div className="rounded-2xl bg-white border border-slate-300 p-4">
-              <p className="text-[10px] uppercase tracking-[0.3em] text-slate-600">Mode</p>
-              <h2 className="text-3xl font-black mt-2">Live</h2>
-              <p className="text-xs text-slate-600 mt-1">monitoring ready</p>
+              <p className="text-[10px] uppercase tracking-[0.3em] text-slate-600">Total Students</p>
+              <h2 className="text-3xl font-black mt-2">{stats.totalStudents}</h2>
+              <p className="text-xs text-slate-600 mt-1">students provisioned</p>
             </div>
           </div>
         </div>
