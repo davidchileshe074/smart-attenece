@@ -11,6 +11,7 @@ type PopulatedSession = {
   status: 'active' | 'expired' | 'scheduled';
   endTime: Date;
   lecturer: unknown;
+  qrNonce: number;
   course: {
     _id: unknown;
     code: string;
@@ -24,8 +25,9 @@ export async function POST(req: Request) {
     await connectDB();
     const body = await req.json();
     const { qrCode, studentId, location } = body;
+    const normalizedQrCode = typeof qrCode === 'string' ? qrCode.trim() : '';
 
-    if (!qrCode || !studentId) {
+    if (!normalizedQrCode || !studentId) {
       return NextResponse.json(
         { success: false, error: 'QR Code and Student ID are required' },
         { status: 400 }
@@ -35,13 +37,13 @@ export async function POST(req: Request) {
     let session: PopulatedSession | null = null;
 
     // 1. Try to resolve the rotating token first.
-    const tokenMatch = verifyRotatingQrToken(qrCode, QR_TOKEN_SECRET);
+    const tokenMatch = verifyRotatingQrToken(normalizedQrCode, QR_TOKEN_SECRET);
 
     if (tokenMatch.valid && tokenMatch.sessionId) {
       session = (await Session.findById(tokenMatch.sessionId).populate('course')) as PopulatedSession | null;
     } else {
       // Backward compatibility for legacy static tokens already stored in the database.
-      session = (await Session.findOne({ qrCode }).populate('course')) as PopulatedSession | null;
+      session = (await Session.findOne({ qrCode: normalizedQrCode }).populate('course')) as PopulatedSession | null;
     }
 
     if (!session) {
@@ -57,6 +59,30 @@ export async function POST(req: Request) {
         await session.save();
       }
       return NextResponse.json({ success: false, error: 'This session has expired' }, { status: 400 });
+    }
+
+    if (tokenMatch.valid) {
+      const currentNonce = typeof session.qrNonce === 'number' ? session.qrNonce : 0;
+      if (tokenMatch.nonce !== currentNonce) {
+        return NextResponse.json({ success: false, error: 'Invalid or expired QR Code' }, { status: 404 });
+      }
+
+      const reservedSession = await Session.findOneAndUpdate(
+        {
+          _id: session._id,
+          status: 'active',
+          endTime: { $gt: now },
+          qrNonce: currentNonce,
+        },
+        { $inc: { qrNonce: 1 } },
+        { new: true }
+      ).populate('course');
+
+      if (!reservedSession) {
+        return NextResponse.json({ success: false, error: 'Invalid or expired QR Code' }, { status: 404 });
+      }
+
+      session = reservedSession as PopulatedSession;
     }
 
     // 3. Verify student exists

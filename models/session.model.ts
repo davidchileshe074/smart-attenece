@@ -30,6 +30,11 @@ const SessionSchema = new mongoose.Schema(
       enum: ['active', 'expired', 'scheduled'],
       default: 'active',
     },
+    qrNonce: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
     location: {
       type: {
         type: String,

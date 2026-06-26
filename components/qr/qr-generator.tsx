@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import Image from 'next/image';
 import { ErrorState, LoadingState } from '@/components/ui/status-state';
+import { QR_ROTATION_MS } from '@/lib/dynamic-qr';
 
 interface QRGeneratorProps {
   sessionId: string;
@@ -52,7 +53,7 @@ export default function QRGenerator({ sessionId }: QRGeneratorProps) {
 
     const timer = window.setInterval(() => {
       void fetchQR();
-    }, 3000);
+    }, QR_ROTATION_MS);
 
     return () => window.clearInterval(timer);
   }, [fetchQR, sessionId]);

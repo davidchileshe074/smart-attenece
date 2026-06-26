@@ -24,7 +24,8 @@ export async function GET(req: Request) {
       return NextResponse.json({ success: false, error: 'Session is no longer active' }, { status: 400 });
     }
 
-    const { token, expiresAt } = createRotatingQrToken(String(session._id), QR_TOKEN_SECRET);
+    const currentNonce = typeof session.qrNonce === 'number' ? session.qrNonce : 0;
+    const { token, expiresAt } = createRotatingQrToken(String(session._id), QR_TOKEN_SECRET, currentNonce);
     const qrImage = await generateQRCode(token);
 
     return NextResponse.json({

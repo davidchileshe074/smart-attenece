@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import Image from 'next/image';
 import { AlertCircle, RefreshCw, Timer } from 'lucide-react';
+import { QR_ROTATION_MS } from '@/lib/dynamic-qr';
+import { useRealtimeEvents } from '@/hooks/use-realtime-events';
 
 interface QRDisplayProps {
   sessionId: string;
@@ -17,7 +19,7 @@ export default function QRDisplay({
   qrCodeData,
   courseName,
   endTime,
-  rotationIntervalMs = 3000,
+  rotationIntervalMs = QR_ROTATION_MS,
 }: QRDisplayProps) {
   const [qrCodeImage, setQrCodeImage] = useState(qrCodeData || '');
   const [loading, setLoading] = useState(!qrCodeData);
@@ -53,6 +55,17 @@ export default function QRDisplay({
       setLoading(false);
     }
   }, [endTime, sessionId]);
+
+  useRealtimeEvents({
+    sessionId,
+    handlers: {
+      onAttendanceMarked: (payload) => {
+        if (payload.sessionId === sessionId) {
+          void refreshQRCode();
+        }
+      },
+    },
+  });
 
   useEffect(() => {
     const initialLoad = window.setTimeout(() => {
@@ -97,7 +110,7 @@ export default function QRDisplay({
       <div className="text-center space-y-4">
         <div>
           <h3 className="text-lg font-bold text-text-primary">{courseName}</h3>
-          <p className="text-sm text-text-secondary">QR updates every 3 seconds to prevent proxy attendance.</p>
+          <p className="text-sm text-text-secondary">QR updates every 6 seconds to prevent proxy attendance.</p>
         </div>
 
         <div className="bg-white p-4 rounded-lg border-2 border-dashed border-slate-200">
@@ -128,7 +141,7 @@ export default function QRDisplay({
           <ol className="list-decimal list-inside space-y-1 text-blue-800 text-xs">
             <li>Display this QR code on your screen or projector</li>
             <li>Students scan with their phones</li>
-            <li>The code rotates every 3 seconds</li>
+            <li>The code rotates every 6 seconds</li>
           </ol>
         </div>
 
