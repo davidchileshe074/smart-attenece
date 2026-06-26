@@ -4,7 +4,7 @@ import Session from '@/models/session.model';
 import Attendance from '@/models/attendance.model';
 import User from '@/models/user.model';
 import { publishRealtimeEvent } from '@/lib/realtime';
-import { verifyRotatingQrToken } from '@/lib/dynamic-qr';
+import { QR_TOKEN_SECRET, verifyRotatingQrToken } from '@/lib/dynamic-qr';
 
 type PopulatedSession = {
   _id: unknown;
@@ -35,7 +35,7 @@ export async function POST(req: Request) {
     let session: PopulatedSession | null = null;
 
     // 1. Try to resolve the rotating token first.
-    const tokenMatch = verifyRotatingQrToken(qrCode, process.env.JWT_SECRET || 'fallback_secret_for_dev_only');
+    const tokenMatch = verifyRotatingQrToken(qrCode, QR_TOKEN_SECRET);
 
     if (tokenMatch.valid && tokenMatch.sessionId) {
       session = (await Session.findById(tokenMatch.sessionId).populate('course')) as PopulatedSession | null;
