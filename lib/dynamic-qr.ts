@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 
-export const QR_ROTATION_MS = 3000;
+export const QR_ROTATION_MS = 5000;
 const QR_PREFIX = 'ATN';
 export const QR_TOKEN_SECRET =
   process.env.QR_TOKEN_SECRET || process.env.JWT_SECRET || 'fallback_secret_for_dev_only';
