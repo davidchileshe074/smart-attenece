@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { AlertCircle, ArrowRight, Loader2, RefreshCw } from 'lucide-react';
+import { AlertCircle, ArrowRight, RefreshCw } from 'lucide-react';
 
 type LoadingStateProps = {
   title: string;
@@ -21,7 +21,7 @@ export function LoadingState({ title, description, compact = false }: LoadingSta
   return (
     <div className={`card text-center ${compact ? 'py-10' : 'py-16'}`}>
       <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-        <Loader2 className="h-6 w-6 animate-spin" />
+       
       </div>
       <h2 className="text-lg font-bold text-text-primary">{title}</h2>
       <p className="mt-2 text-sm text-text-secondary">{description}</p>

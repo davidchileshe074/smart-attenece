@@ -35,7 +35,7 @@ export async function POST(req: Request) {
   try {
     await connectDB();
     const body = await req.json();
-    const { courseId, lecturerId, durationInMinutes } = body;
+    const { courseId, lecturerId, durationInMinutes, expectedStudentCount } = body;
 
     if (!courseId || !lecturerId || !durationInMinutes) {
       return NextResponse.json(
@@ -58,6 +58,10 @@ export async function POST(req: Request) {
       endTime,
       qrCode: qrCodeToken,
       status: 'active',
+      expectedStudentCount:
+        typeof expectedStudentCount === 'number' && Number.isFinite(expectedStudentCount)
+          ? Math.max(0, Math.floor(expectedStudentCount))
+          : undefined,
     });
 
     const populatedSession = await Session.findById(session._id).populate('course', 'title code');

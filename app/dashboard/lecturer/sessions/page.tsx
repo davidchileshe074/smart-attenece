@@ -5,6 +5,7 @@ import { AlertCircle, Eye, Plus, RefreshCw, StopCircle, Trash2 } from 'lucide-re
 import Link from 'next/link';
 import CourseSessionModal from '@/components/lecturer/course-session-modal';
 import { useRealtimeEvents } from '@/hooks/use-realtime-events';
+import { ErrorState, LoadingState } from '@/components/ui/status-state';
 
 interface Session {
   _id: string;
@@ -184,17 +185,11 @@ export default function LecturerSessionsPage() {
       </div>
 
       {error && (
-        <div className="flex gap-3 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
-          <AlertCircle className="h-5 w-5 flex-shrink-0" />
-          <p>{error}</p>
-        </div>
+        <ErrorState title="Unable to load sessions" message={error} onRetry={loadSessions} />
       )}
 
       {loading ? (
-        <div className="text-center py-12">
-          <div className="inline-block animate-spin text-2xl mb-2">Loading</div>
-          <p className="text-text-secondary">Loading sessions...</p>
-        </div>
+        <LoadingState title="Loading sessions" description="Fetching your attendance sessions." compact />
       ) : sessions.length === 0 ? (
         <div className="card text-center py-12">
           <p className="text-text-secondary mb-4">No sessions yet</p>

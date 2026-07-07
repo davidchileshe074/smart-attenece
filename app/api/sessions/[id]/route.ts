@@ -64,7 +64,7 @@ export async function PATCH(
     const session = await Session.findByIdAndUpdate(id, body, {
       new: true,
       runValidators: true,
-    });
+    }).populate('course', 'title code');
 
     if (!session) {
       return NextResponse.json({ success: false, error: 'Session not found' }, { status: 404 });
@@ -100,7 +100,7 @@ export async function PUT(
       id,
       { status, ...(status === 'expired' ? { endTime: new Date() } : {}) },
       { new: true }
-    );
+    ).populate('course', 'title code');
 
     if (!session) {
       return NextResponse.json({ success: false, error: 'Session not found' }, { status: 404 });

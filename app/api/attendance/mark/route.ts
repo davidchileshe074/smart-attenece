@@ -6,9 +6,12 @@ import User from '@/models/user.model';
 import { publishRealtimeEvent } from '@/lib/realtime';
 import { QR_TOKEN_SECRET, verifyRotatingQrToken } from '@/lib/dynamic-qr';
 
+const LATE_ATTENDANCE_THRESHOLD_MINUTES = 10;
+
 type PopulatedSession = {
   _id: unknown;
   status: 'active' | 'expired' | 'scheduled';
+  startTime: Date;
   endTime: Date;
   lecturer: unknown;
   qrNonce: number;
@@ -61,6 +64,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: 'This session has expired' }, { status: 400 });
     }
 
+    const lateCutoff = new Date(session.startTime.getTime() + LATE_ATTENDANCE_THRESHOLD_MINUTES * 60000);
+
     if (tokenMatch.valid) {
       const currentNonce = typeof session.qrNonce === 'number' ? session.qrNonce : 0;
       if (tokenMatch.nonce !== currentNonce) {
@@ -110,7 +115,7 @@ export async function POST(req: Request) {
       session: session._id,
       course: session.course._id,
       location: location || { type: 'Point', coordinates: [0, 0] },
-      status: 'present',
+      status: now > lateCutoff ? 'late' : 'present',
     });
 
     const populatedAttendance = await Attendance.findById(attendance._id)

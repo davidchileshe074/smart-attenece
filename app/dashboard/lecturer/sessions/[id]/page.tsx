@@ -1,7 +1,7 @@
 'use client';
 
 import { use, useCallback, useEffect, useState } from 'react';
-import { ArrowLeft, AlertCircle } from 'lucide-react';
+import { AlertCircle, ArrowLeft, StopCircle } from 'lucide-react';
 import Link from 'next/link';
 import QRDisplay from '@/components/lecturer/qr-display';
 import LiveAttendance from '@/components/lecturer/live-attendance';
@@ -13,6 +13,7 @@ interface SessionData {
   endTime: string;
   status: string;
   qrCode: string;
+  expectedStudentCount?: number | null;
 }
 
 export default function SessionDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -47,6 +48,32 @@ export default function SessionDetailPage({ params }: { params: Promise<{ id: st
       setLoading(false);
     }
   }, [sessionId]);
+
+  const handleEndSession = useCallback(async () => {
+    if (!session) return;
+
+    if (!confirm('Are you sure you want to end this session? Students will no longer be able to mark attendance.')) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/sessions/${session._id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'expired' }),
+      });
+
+      const data = await res.json();
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to end session');
+      }
+
+      setSession(data.data);
+      setTimeRemaining(0);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to end session');
+    }
+  }, [session]);
 
   useEffect(() => {
     const initialLoad = window.setTimeout(() => {
@@ -115,10 +142,19 @@ export default function SessionDetailPage({ params }: { params: Promise<{ id: st
   return (
     <div className="space-y-6">
       {/* Back Button */}
-      <Link href="/dashboard/lecturer/sessions" className="flex items-center gap-2 text-primary hover:underline">
-        <ArrowLeft className="h-4 w-4" />
-        Back to Sessions
-      </Link>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Link href="/dashboard/lecturer/sessions" className="flex items-center gap-2 text-primary hover:underline">
+          <ArrowLeft className="h-4 w-4" />
+          Back to Sessions
+        </Link>
+
+        {session.status === 'active' && (
+          <button onClick={handleEndSession} className="btn-secondary gap-2 border-red-200 text-red-700 hover:bg-red-50">
+            <StopCircle className="h-4 w-4" />
+            End Session
+          </button>
+        )}
+      </div>
 
       {/* Header */}
       <div>
@@ -213,6 +249,16 @@ export default function SessionDetailPage({ params }: { params: Promise<{ id: st
           <div>
             <p className="text-sm font-semibold text-text-secondary uppercase">QR Token</p>
             <p className="text-text-primary mt-1 font-mono text-sm truncate">{session.qrCode}</p>
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-text-secondary uppercase">Expected Students</p>
+            <p className="text-text-primary mt-1">
+              {session.expectedStudentCount ?? 'Not set'}
+            </p>
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-text-secondary uppercase">Late Criteria</p>
+            <p className="text-text-primary mt-1">Marked late after 10 minutes</p>
           </div>
         </div>
       </div>

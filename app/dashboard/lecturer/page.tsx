@@ -137,10 +137,10 @@ export default function LecturerOverview() {
 
   return (
     <div className="space-y-10">
-      <div className="rounded-3xl overflow-hidden border border-slate-200 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 text-slate-900 shadow-lg">
+      <div className="rounded-3xl overflow-hidden border border-slate-200 bg-transparent text-slate-900 shadow-lg">
         <div className="p-8 md:p-10 grid grid-cols-1 lg:grid-cols-[1.3fr_0.7fr] gap-8 items-end">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.35em] text-primary">Lecturer Command Center</p>
+            <p className="text-xs font-bold uppercase tracking-[0.35em] text-primary">Lecturer DashBoard</p>
             <h1 className="text-3xl md:text-4xl font-black mt-3">Manage sessions, attendance, and course activity in one place.</h1>
             <p className="text-slate-600 mt-4 max-w-2xl">
               Welcome back, {profile?.name || 'lecturer'}. Start a session, monitor attendance live, and check who may need follow-up.

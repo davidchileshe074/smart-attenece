@@ -35,6 +35,11 @@ const SessionSchema = new mongoose.Schema(
       default: 0,
       min: 0,
     },
+    expectedStudentCount: {
+      type: Number,
+      min: 0,
+      default: null,
+    },
     location: {
       type: {
         type: String,

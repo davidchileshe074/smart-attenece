@@ -13,22 +13,72 @@ type AttendanceRecord = {
 };
 
 type SummaryOptions = {
-  classSize?: number;
+  sessionClassSizes?: Map<string, number>;
   sessionCount?: number;
 };
 
 type CourseWithStudents = {
+  _id?: { toString(): string } | string;
   students?: Array<{ toString(): string } | string>;
 };
+
+type SessionWithMetadata = {
+  _id?: { toString(): string } | string;
+  course?: { toString(): string } | string;
+  expectedStudentCount?: number | null;
+};
+
+function toId(value: { toString(): string } | string | undefined) {
+  return value ? value.toString() : '';
+}
+
+function buildClassSizeMap(sessions: SessionWithMetadata[], courses: CourseWithStudents[]) {
+  const courseSizeMap = new Map<string, number>();
+
+  for (const course of courses) {
+    const courseId = toId(course._id);
+    if (!courseId) continue;
+
+    const uniqueStudents = new Set(
+      (course.students || []).map((studentId) => studentId.toString())
+    );
+    courseSizeMap.set(courseId, uniqueStudents.size);
+  }
+
+  const sessionClassSizes = new Map<string, number>();
+
+  for (const session of sessions) {
+    const sessionId = toId(session._id);
+    const courseId = toId(session.course);
+    if (!sessionId) continue;
+
+    const fallbackCourseSize = courseId ? courseSizeMap.get(courseId) || 0 : 0;
+    const explicitCount =
+      typeof session.expectedStudentCount === 'number' && Number.isFinite(session.expectedStudentCount)
+        ? Math.max(0, Math.floor(session.expectedStudentCount))
+        : null;
+
+    sessionClassSizes.set(sessionId, explicitCount ?? fallbackCourseSize);
+  }
+
+  return sessionClassSizes;
+}
 
 function summarize(records: AttendanceRecord[], options: SummaryOptions = {}) {
   const totalRecords = records.length;
   const presentCount = records.filter((record) => record.status === 'present').length;
   const lateCount = records.filter((record) => record.status === 'late').length;
   const attendanceRate = totalRecords > 0 ? Math.round((presentCount / totalRecords) * 100) : 0;
-  const totalStudents = options.classSize || 0;
+
+  const totalExpectedStudents = Array.from(options.sessionClassSizes?.values() || []).reduce(
+    (sum, value) => sum + value,
+    0
+  );
+
   const classAttendanceRate =
-    totalStudents > 0 ? Math.min(100, Math.round((presentCount / totalStudents) * 100)) : attendanceRate;
+    totalExpectedStudents > 0
+      ? Math.round(((presentCount + lateCount) / totalExpectedStudents) * 100)
+      : attendanceRate;
 
   const studentMap = new Map<string, { name: string; studentId: string; email?: string; present: number; total: number }>();
 
@@ -66,8 +116,8 @@ function summarize(records: AttendanceRecord[], options: SummaryOptions = {}) {
     lateCount,
     attendanceRate,
     classAttendanceRate,
-    classSize: totalStudents,
-    totalStudents,
+    classSize: totalExpectedStudents,
+    totalStudents: totalExpectedStudents,
     sessionCount: options.sessionCount || 0,
     lowAttendanceAlerts,
   };
@@ -99,39 +149,29 @@ export async function GET(req: Request) {
         );
       }
       const lecturerObjectId = new mongoose.Types.ObjectId(lecturerId);
-      const [sessions, courses] = await Promise.all([
-        Session.find({ lecturer: lecturerObjectId }).select('_id'),
-        Course.find({ lecturer: lecturerObjectId }).select('students'),
+      const [sessionsRaw, coursesRaw] = await Promise.all([
+        Session.find({ lecturer: lecturerObjectId }).select('_id course expectedStudentCount').lean(),
+        Course.find({ lecturer: lecturerObjectId }).select('_id students').lean(),
       ]);
-      const typedCourses = courses as CourseWithStudents[];
+      const sessions = sessionsRaw as SessionWithMetadata[];
+      const courses = coursesRaw as CourseWithStudents[];
 
       query.session = { $in: sessions.map((session) => session._id) };
       summaryOptions = {
-        classSize: new Set(
-          typedCourses.flatMap((course) =>
-            (course.students || []).map((studentId) =>
-              typeof studentId === 'string' ? studentId : studentId.toString()
-            )
-          )
-        ).size,
+        sessionClassSizes: buildClassSizeMap(sessions, courses),
         sessionCount: sessions.length,
       };
     } else {
-      const [sessions, courses] = await Promise.all([
-        Session.find().select('_id'),
-        Course.find().select('students'),
+      const [sessionsRaw, coursesRaw] = await Promise.all([
+        Session.find().select('_id course expectedStudentCount').lean(),
+        Course.find().select('_id students').lean(),
       ]);
-      const typedCourses = courses as CourseWithStudents[];
+      const sessions = sessionsRaw as SessionWithMetadata[];
+      const courses = coursesRaw as CourseWithStudents[];
 
       query.session = { $in: sessions.map((session) => session._id) };
       summaryOptions = {
-        classSize: new Set(
-          typedCourses.flatMap((course) =>
-            (course.students || []).map((studentId) =>
-              typeof studentId === 'string' ? studentId : studentId.toString()
-            )
-          )
-        ).size,
+        sessionClassSizes: buildClassSizeMap(sessions, courses),
         sessionCount: sessions.length,
       };
     }

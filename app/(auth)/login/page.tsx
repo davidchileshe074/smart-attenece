@@ -123,11 +123,11 @@ export default function LoginPage() {
         <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-accent/5 z-10" />
         <div className="relative z-20 flex flex-col justify-between p-16 text-white h-full">
           <div>
-            <span className="text-accent font-bold tracking-widest text-xs uppercase">Smart Attendance v2.0</span>
+        
           </div>
           
           <div className="max-w-lg">
-            <h2 className="text-5xl font-bold leading-tight mb-6">Secure, Seamless <br /> & Structured.</h2>
+            <h2 className="text-5xl font-bold leading-tight mb-6 text-white">Secure, Seamless <br /> & Structured.</h2>
             <p className="text-slate-300 text-lg leading-relaxed">
               Experience the next generation of academic tracking. Built for enterprise speed with 
               minimalist design principles.
@@ -140,7 +140,6 @@ export default function LoginPage() {
                 <div key={i} className="h-8 w-8 rounded-full border-2 border-bg-dark bg-slate-800" />
               ))}
             </div>
-            <span>Trusted by 500+ Institutions</span>
           </div>
         </div>
 

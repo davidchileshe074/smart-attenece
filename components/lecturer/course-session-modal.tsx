@@ -9,6 +9,7 @@ type Course = {
   _id: string;
   code: string;
   title: string;
+  students?: unknown[];
 };
 
 interface CourseSessionModalProps {
@@ -29,6 +30,7 @@ export default function CourseSessionModal({
   const [programKey, setProgramKey] = useState('');
   const [courseCode, setCourseCode] = useState('');
   const [durationInMinutes, setDurationInMinutes] = useState('60');
+  const [expectedStudentCount, setExpectedStudentCount] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -62,9 +64,15 @@ export default function CourseSessionModal({
     return selectedProgram.courses.find((course) => course.code === courseCode) || null;
   }, [courseCode, selectedProgram]);
 
+  const existingCourse = useMemo(
+    () => existingCourses.find((course) => course.code === selectedCourse?.code),
+    [existingCourses, selectedCourse]
+  );
+
   const handleProgramChange = (nextProgramKey: string) => {
     setProgramKey(nextProgramKey);
     setCourseCode('');
+    setExpectedStudentCount('');
     setError('');
   };
 
@@ -119,6 +127,7 @@ export default function CourseSessionModal({
           courseId,
           lecturerId,
           durationInMinutes: parseInt(durationInMinutes, 10),
+          expectedStudentCount: expectedStudentCount ? parseInt(expectedStudentCount, 10) : undefined,
         }),
       });
 
@@ -188,7 +197,15 @@ export default function CourseSessionModal({
                 required
                 disabled={!selectedProgram}
                 value={courseCode}
-                onChange={(e) => setCourseCode(e.target.value)}
+                onChange={(e) => {
+                  const nextCourseCode = e.target.value;
+                  setCourseCode(nextCourseCode);
+
+                  const matchedCourse = existingCourses.find((course) => course.code === nextCourseCode);
+                  if (matchedCourse?.students?.length) {
+                    setExpectedStudentCount(String(matchedCourse.students.length));
+                  }
+                }}
                 className="input-base h-11 disabled:cursor-not-allowed disabled:bg-slate-50"
               >
                 <option value="">Choose a course...</option>
@@ -213,6 +230,21 @@ export default function CourseSessionModal({
               className="input-base h-11"
             />
             <p className="mt-1 text-xs text-text-secondary">The session will start immediately after creation.</p>
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-semibold text-text-primary">Expected students</label>
+            <input
+              type="number"
+              min="0"
+              placeholder={existingCourse?.students?.length ? String(existingCourse.students.length) : 'Leave blank'}
+              value={expectedStudentCount}
+              onChange={(e) => setExpectedStudentCount(e.target.value)}
+              className="input-base h-11"
+            />
+            <p className="mt-1 text-xs text-text-secondary">
+              Used to calculate session attendance percentages. Leave blank to reuse the enrolled count when available.
+            </p>
           </div>
 
           {selectedCourse && (

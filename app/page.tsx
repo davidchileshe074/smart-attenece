@@ -5,7 +5,7 @@ export default function Home() {
     <main className="min-h-screen flex flex-col items-center justify-center p-6 text-center">
       <div className="max-w-4xl w-full">
         <div className="inline-block px-4 py-1.5 mb-6 text-sm font-semibold tracking-wide text-brand-blue uppercase bg-blue-50 rounded-full border border-blue-100">
-          Next-Gen Attendance Tracking
+          Attendance Tracking
         </div>
         
         <h1 className="text-5xl md:text-7xl font-extrabold mb-6 tracking-tighter">
@@ -15,7 +15,7 @@ export default function Home() {
         
         <p className="text-xl text-gray-600 mb-10 max-w-2xl mx-auto leading-relaxed">
           The ultimate QR-based solution for modern classrooms. 
-          Real-time tracking, secure verification, and automated reporting in one sleek platform.
+          Real-time tracking, secure verification, and automated reporting in one  platform.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">

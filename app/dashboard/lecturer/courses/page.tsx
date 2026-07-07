@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Plus } from 'lucide-react';
+import Link from 'next/link';
 import CourseSessionModal from '@/components/lecturer/course-session-modal';
 import { LoadingState } from '@/components/ui/status-state';
 
@@ -11,6 +12,7 @@ export default function LecturerCoursesPage() {
     code: string;
     title: string;
     students?: unknown[];
+    studentCount?: number;
   };
 
   const [courses, setCourses] = useState<Course[]>([]);
@@ -69,8 +71,10 @@ export default function LecturerCoursesPage() {
               <span className="text-xs font-bold text-primary uppercase">{course.code}</span>
               <h3 className="text-xl font-bold mt-1 mb-4 text-text-primary">{course.title}</h3>
               <div className="flex justify-between items-center text-sm text-text-secondary">
-                <span>{course.students?.length || 0} Students</span>
-                <button className="text-primary font-semibold hover:underline">View Details</button>
+                <span>{course.studentCount ?? course.students?.length ?? 0} Students</span>
+                <Link href={`/dashboard/lecturer/courses/${course._id}`} className="text-primary font-semibold hover:underline">
+                  View Details
+                </Link>
               </div>
             </div>
           ))}

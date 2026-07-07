@@ -2,6 +2,8 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { 
   LayoutDashboard, 
   BookOpen, 
@@ -23,8 +25,22 @@ interface SidebarProps {
 
 export default function Sidebar({ role, isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
+  const [loggingOut, setLoggingOut] = useState(false);
   const handleNavigate = () => {
     onClose?.();
+  };
+
+  const handleLogout = async () => {
+    try {
+      setLoggingOut(true);
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } finally {
+      onClose?.();
+      router.push('/login');
+      router.refresh();
+      setLoggingOut(false);
+    }
   };
 
   const links = {
@@ -111,9 +127,15 @@ export default function Sidebar({ role, isOpen, onClose }: SidebarProps) {
           <Settings className="h-4 w-4 text-slate-400" />
           Settings
         </Link>
-        <button onClick={handleNavigate} className="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-text-secondary hover:bg-red-50 hover:text-error transition-all w-full text-left">
+        <button
+          onClick={() => {
+            void handleLogout();
+          }}
+          disabled={loggingOut}
+          className="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-text-secondary hover:bg-red-50 hover:text-error transition-all w-full text-left disabled:opacity-60"
+        >
           <LogOut className="h-4 w-4 text-slate-400" />
-          Sign out
+          {loggingOut ? 'Signing out...' : 'Sign out'}
         </button>
       </div>
     </aside>
