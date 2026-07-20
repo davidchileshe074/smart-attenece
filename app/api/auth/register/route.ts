@@ -3,10 +3,10 @@ import connectDB from '@/lib/db';
 import User from '@/models/user.model';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
-import { signToken } from '@/lib/auth';
+import { verifyToken } from '@/lib/auth';
 import { cookies } from 'next/headers';
 
-const ALLOWED_ROLES = new Set(['student', 'lecturer']);
+const ALLOWED_ROLES = new Set(['student', 'lecturer', 'admin']);
 
 async function generateUniqueStudentId() {
   for (let attempts = 0; attempts < 5; attempts += 1) {
@@ -22,6 +22,18 @@ async function generateUniqueStudentId() {
 
 export async function POST(req: Request) {
   try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get('token')?.value;
+
+    if (!token) {
+      return NextResponse.json({ success: false, error: 'Unauthorized: No token provided' }, { status: 401 });
+    }
+
+    const decoded = verifyToken(token);
+    if (!decoded || decoded.role !== 'admin') {
+      return NextResponse.json({ success: false, error: 'Forbidden: Admin access required' }, { status: 403 });
+    }
+
     await connectDB();
     const body = await req.json();
     const name = String(body.name || '').trim();
@@ -35,7 +47,7 @@ export async function POST(req: Request) {
 
     if (!ALLOWED_ROLES.has(role)) {
       return NextResponse.json(
-        { success: false, error: 'Invalid registration role. Choose student or lecturer.' },
+        { success: false, error: 'Invalid registration role. Choose student, lecturer, or admin.' },
         { status: 400 }
       );
     }
@@ -63,33 +75,16 @@ export async function POST(req: Request) {
       ...(studentId ? { studentId } : {}),
     });
 
-    const token = signToken({
-      userId: user._id.toString(),
-      role: user.role,
-      email: user.email,
-    });
-
-    const cookieStore = await cookies();
-    cookieStore.set('token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60,
-      path: '/',
-    });
-
     return NextResponse.json(
       {
         success: true,
-        message: 'User registered',
+        message: 'User created successfully',
         user: {
           name: user.name,
           role: user.role,
           email: user.email,
           studentId: user.studentId || null,
-        },
-        redirectTo:
-          user.role === 'student' ? '/dashboard/student' : '/dashboard/lecturer',
+        }
       },
       { status: 201 }
     );

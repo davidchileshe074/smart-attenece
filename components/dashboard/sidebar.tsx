@@ -14,7 +14,8 @@ import {
   Settings,
   LogOut,
   ShieldCheck,
-  X
+  X,
+  UserPlus
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -59,6 +60,7 @@ export default function Sidebar({ role, isOpen, onClose }: SidebarProps) {
     admin: [
       { name: 'Admin Hub', href: '/dashboard/admin', icon: LayoutDashboard },
       { name: 'Manage Users', href: '/dashboard/admin/users', icon: Users },
+      { name: 'Create User', href: '/dashboard/admin/create-user', icon: UserPlus },
       { name: 'System Reports', href: '/dashboard/admin/reports', icon: BarChart3 },
     ]
   };

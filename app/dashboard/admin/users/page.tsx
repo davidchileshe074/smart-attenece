@@ -1,8 +1,4 @@
-'use client';
-
-import { useState, useEffect } from 'react';
 import { 
-  Users, 
   Search, 
   MoreVertical, 
   UserPlus,
@@ -11,25 +7,18 @@ import {
   UserCheck,
   Filter
 } from 'lucide-react';
+import connectDB from '@/lib/db';
+import User from '@/models/user.model';
+import Link from 'next/link';
 
-export default function AdminUsersPage() {
-  const [loading, setLoading] = useState(true);
-  const [users, setUsers] = useState<any[]>([]);
+export const dynamic = 'force-dynamic';
 
-  useEffect(() => {
-    // Simulate fetching users
-    const timer = setTimeout(() => {
-      setUsers([
-        { id: 1, name: 'Dr. John Doe', email: 'j.doe@univ.edu', role: 'Lecturer', status: 'Active' },
-        { id: 2, name: 'Jane Smith', email: 'j.smith@student.edu', role: 'Student', status: 'Active' },
-        { id: 3, name: 'Admin Chileshe', email: 'admin@system.com', role: 'Admin', status: 'Active' },
-        { id: 4, name: 'Mark Wilson', email: 'm.wilson@student.edu', role: 'Student', status: 'Suspended' },
-        { id: 5, name: 'Sarah Parker', email: 's.parker@univ.edu', role: 'Lecturer', status: 'Active' },
-      ]);
-      setLoading(false);
-    }, 1000);
-    return () => clearTimeout(timer);
-  }, []);
+export default async function AdminUsersPage() {
+  await connectDB();
+  
+  // Fetch users from DB
+  const users = await User.find().lean().sort({ createdAt: -1 });
+  const totalUsers = await User.countDocuments();
 
   return (
     <div className="space-y-8">
@@ -39,10 +28,10 @@ export default function AdminUsersPage() {
           <h1 className="text-2xl font-bold text-text-primary">User Management</h1>
           <p className="text-text-secondary text-sm">Create, manage, and audit system users.</p>
         </div>
-        <button className="btn-primary gap-2">
+        <Link href="/dashboard/admin/create-user" className="btn-primary gap-2 flex items-center">
           <UserPlus className="h-4 w-4" />
           Add New User
-        </button>
+        </Link>
       </div>
 
       {/* Filters & Search */}
@@ -55,7 +44,7 @@ export default function AdminUsersPage() {
             className="input-base pl-10"
           />
         </div>
-        <button className="btn-secondary gap-2 text-xs">
+        <button className="btn-secondary gap-2 text-xs flex items-center">
           <Filter className="h-4 w-4" />
           More Filters
         </button>
@@ -73,22 +62,19 @@ export default function AdminUsersPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50">
-            {loading ? (
-              [1, 2, 3, 4, 5].map(i => (
-                <tr key={i}>
-                  <td className="px-6 py-4"><div className="h-10 w-48 bg-slate-100 animate-pulse rounded" /></td>
-                  <td className="px-6 py-4"><div className="h-4 w-20 bg-slate-100 animate-pulse rounded" /></td>
-                  <td className="px-6 py-4 text-right flex justify-end"><div className="h-6 w-16 bg-slate-100 animate-pulse rounded-full" /></td>
-                  <td className="px-6 py-4 text-right"><div className="h-4 w-4 bg-slate-100 animate-pulse rounded ml-auto" /></td>
-                </tr>
-              ))
+            {users.length === 0 ? (
+              <tr>
+                <td colSpan={4} className="px-6 py-8 text-center text-text-secondary">
+                  No users found in the system.
+                </td>
+              </tr>
             ) : (
-              users.map((user) => (
-                <tr key={user.id} className="hover:bg-slate-50/50 transition-colors group">
+              users.map((user: any) => (
+                <tr key={user._id.toString()} className="hover:bg-slate-50/50 transition-colors group">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <div className="h-9 w-9 bg-slate-100 rounded-md flex items-center justify-center border border-slate-200">
-                        {user.role === 'Lecturer' ? <Shield className="h-4 w-4 text-primary" /> : <UserCheck className="h-4 w-4 text-slate-500" />}
+                        {user.role === 'lecturer' ? <Shield className="h-4 w-4 text-primary" /> : <UserCheck className="h-4 w-4 text-slate-500" />}
                       </div>
                       <div>
                         <p className="text-sm font-bold text-text-primary">{user.name}</p>
@@ -99,13 +85,11 @@ export default function AdminUsersPage() {
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <span className="text-xs font-medium text-text-primary">{user.role}</span>
+                    <span className="text-xs font-medium text-text-primary capitalize">{user.role}</span>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-tighter ${
-                      user.status === 'Active' ? 'bg-success/10 text-success' : 'bg-error/10 text-error'
-                    }`}>
-                      {user.status}
+                    <span className="text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-tighter bg-success/10 text-success">
+                      Active
                     </span>
                   </td>
                   <td className="px-6 py-4 text-right">
@@ -120,12 +104,12 @@ export default function AdminUsersPage() {
         </table>
       </div>
 
-      {/* Pagination Placeholder */}
+      {/* Pagination Footer */}
       <div className="flex justify-between items-center text-sm text-text-secondary px-2">
-        <p>Showing 1 to 5 of 4,821 users</p>
+        <p>Showing 1 to {users.length} of {totalUsers} users</p>
         <div className="flex gap-2">
           <button className="btn-secondary py-1.5 px-3 disabled:opacity-30" disabled>Previous</button>
-          <button className="btn-secondary py-1.5 px-3">Next</button>
+          <button className="btn-secondary py-1.5 px-3 disabled:opacity-30" disabled>Next</button>
         </div>
       </div>
     </div>

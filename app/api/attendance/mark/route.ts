@@ -6,7 +6,7 @@ import User from '@/models/user.model';
 import { publishRealtimeEvent } from '@/lib/realtime';
 import { QR_TOKEN_SECRET, verifyRotatingQrToken } from '@/lib/dynamic-qr';
 
-const LATE_ATTENDANCE_THRESHOLD_MINUTES = 10;
+const LATE_ATTENDANCE_THRESHOLD_MINUTES = 2; // Reduced to 2 minutes for easier testing
 
 type PopulatedSession = {
   _id: unknown;
